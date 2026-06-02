@@ -57,6 +57,46 @@ class Settings(BaseSettings):
         description="Minutos de validez del access token JWT (default: 15)",
     )
 
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(
+        default=7,
+        ge=1,
+        description="Días de validez del refresh token opaco (default: 7)",
+    )
+
+    # ── Password recovery ─────────────────────────────────────────────────
+    PASSWORD_RESET_EXPIRE_MINUTES: int = Field(
+        default=30,
+        ge=1,
+        description="Minutos de validez del token de reset de contraseña (default: 30)",
+    )
+
+    # ── 2FA ───────────────────────────────────────────────────────────────
+    TWO_FA_CHALLENGE_EXPIRE_MINUTES: int = Field(
+        default=5,
+        ge=1,
+        description="Minutos de validez del challenge token de 2FA (default: 5)",
+    )
+
+    TOTP_ISSUER: str = Field(
+        default="activia-trace",
+        min_length=1,
+        max_length=64,
+        description="Issuer del secret TOTP — aparece en apps authenticator",
+    )
+
+    # ── Rate limiting ─────────────────────────────────────────────────────
+    LOGIN_RATE_LIMIT: str = Field(
+        default="5/60s",
+        description="Rate limit para endpoints sensibles (formato slowapi: count/period)",
+    )
+
+    # ── Mail ──────────────────────────────────────────────────────────────
+    MAILER_MODE: str = Field(
+        default="console",
+        pattern=r"^(console|n8n)$",
+        description="Modo de envío de mail: 'console' (log JSON) o 'n8n' (futuro)",
+    )
+
     # ── Environment ───────────────────────────────────────────────────────
     ENVIRONMENT: str = Field(
         default="development",

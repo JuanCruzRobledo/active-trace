@@ -111,11 +111,17 @@ class EncryptedColumn(TypeDecorator[Any]):
 
         class Usuario(Base, BaseMixin):
             __tablename__ = "usuario"
-            email = Column(EncryptedColumn(key=settings.ENCRYPTION_KEY))
+            email = Column(EncryptedColumn(key="placeholder"))
+
+    La ``key`` pasada en construcción es un placeholder. La key real se
+    inyecta en el arranque de la app llamando a
+    :func:`inject_encryption_keys` con el valor de ``settings.ENCRYPTION_KEY``.
+    Esto evita la dependencia circular entre la definición del modelo y
+    la carga de settings.
 
     Args:
-        key: Clave Fernet para el cifrado. Se pasa al crear la columna.
-            En producción se lee de las settings del tenant.
+        key: Placeholder de clave (cualquier string ≥32 chars). Se reemplaza
+            en :func:`inject_encryption_keys` al arranque.
     """
 
     impl = Text
@@ -123,6 +129,14 @@ class EncryptedColumn(TypeDecorator[Any]):
 
     def __init__(self, key: str, **kwargs: Any) -> None:
         super().__init__(**kwargs)
+        # Placeholder; reemplazado en arranque vía inject_encryption_keys()
+        self._encryption_service = EncryptionService(key=key)
+
+    def replace_key(self, key: str) -> None:
+        """Reemplaza la clave de cifrado en runtime.
+
+        Llamado por :func:`inject_encryption_keys` durante el lifespan de la app.
+        """
         self._encryption_service = EncryptionService(key=key)
 
     def process_bind_param(
@@ -156,6 +170,25 @@ class EncryptedColumn(TypeDecorator[Any]):
         if value is None:
             return None
         return self._encryption_service.decrypt(value)
+
+
+def inject_encryption_keys(key: str) -> None:
+    """Inyecta la clave real de cifrado en todas las :class:`EncryptedColumn`.
+
+    Recorre ``Base.metadata`` y reemplaza el ``_encryption_service`` de cada
+    columna cifrada con uno que use la ``key`` provista. Llamar UNA vez en
+    el lifespan de la app (en :func:`app.core.database.init_engine` o en
+    :func:`app.main.create_app`).
+
+    Args:
+        key: Clave Fernet (string ≥32 chars, ver :class:`EncryptionService`).
+    """
+    from app.core.database import Base  # noqa: PLC0415 — circular safe
+
+    for table in Base.metadata.tables.values():
+        for column in table.columns:
+            if isinstance(column.type, EncryptedColumn):
+                column.type.replace_key(key)
 
 
 # ── Fields marked [cifrado] in the knowledge base ──────────────────────────

@@ -15,6 +15,12 @@ def clear_env() -> None:
         "SECRET_KEY",
         "ENCRYPTION_KEY",
         "ACCESS_TOKEN_EXPIRE_MINUTES",
+        "REFRESH_TOKEN_EXPIRE_DAYS",
+        "PASSWORD_RESET_EXPIRE_MINUTES",
+        "TWO_FA_CHALLENGE_EXPIRE_MINUTES",
+        "TOTP_ISSUER",
+        "LOGIN_RATE_LIMIT",
+        "MAILER_MODE",
         "ENVIRONMENT",
         "LOG_LEVEL",
     ]
@@ -114,3 +120,89 @@ class TestSettingsInvalid:
 
         with pytest.raises(ValidationError):
             Settings()  # type: ignore[call-arg]
+
+
+class TestC03Settings:
+    """Settings C-03: nuevas variables de auth, 2FA, recovery y rate limit."""
+
+    def test_refresh_token_expire_days_default(self) -> None:
+        """WHEN sin env var → REFRESH_TOKEN_EXPIRE_DAYS = 7."""
+        os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost:5432/db"
+        os.environ["SECRET_KEY"] = "a" * 64
+        os.environ["ENCRYPTION_KEY"] = "b" * 32
+        from app.core.config import Settings
+
+        s = Settings()  # type: ignore[call-arg]
+        assert s.REFRESH_TOKEN_EXPIRE_DAYS == 7
+
+    def test_password_reset_expire_minutes_default(self) -> None:
+        """WHEN sin env var → PASSWORD_RESET_EXPIRE_MINUTES = 30."""
+        os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost:5432/db"
+        os.environ["SECRET_KEY"] = "a" * 64
+        os.environ["ENCRYPTION_KEY"] = "b" * 32
+        from app.core.config import Settings
+
+        s = Settings()  # type: ignore[call-arg]
+        assert s.PASSWORD_RESET_EXPIRE_MINUTES == 30
+
+    def test_two_fa_challenge_expire_minutes_default(self) -> None:
+        """WHEN sin env var → TWO_FA_CHALLENGE_EXPIRE_MINUTES = 5."""
+        os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost:5432/db"
+        os.environ["SECRET_KEY"] = "a" * 64
+        os.environ["ENCRYPTION_KEY"] = "b" * 32
+        from app.core.config import Settings
+
+        s = Settings()  # type: ignore[call-arg]
+        assert s.TWO_FA_CHALLENGE_EXPIRE_MINUTES == 5
+
+    def test_totp_issuer_default(self) -> None:
+        """WHEN sin env var → TOTP_ISSUER = 'activia-trace'."""
+        os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost:5432/db"
+        os.environ["SECRET_KEY"] = "a" * 64
+        os.environ["ENCRYPTION_KEY"] = "b" * 32
+        from app.core.config import Settings
+
+        s = Settings()  # type: ignore[call-arg]
+        assert s.TOTP_ISSUER == "activia-trace"
+
+    def test_login_rate_limit_default(self) -> None:
+        """WHEN sin env var → LOGIN_RATE_LIMIT = '5/60s'."""
+        os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost:5432/db"
+        os.environ["SECRET_KEY"] = "a" * 64
+        os.environ["ENCRYPTION_KEY"] = "b" * 32
+        from app.core.config import Settings
+
+        s = Settings()  # type: ignore[call-arg]
+        assert s.LOGIN_RATE_LIMIT == "5/60s"
+
+    def test_mailer_mode_default(self) -> None:
+        """WHEN sin env var → MAILER_MODE = 'console'."""
+        os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost:5432/db"
+        os.environ["SECRET_KEY"] = "a" * 64
+        os.environ["ENCRYPTION_KEY"] = "b" * 32
+        from app.core.config import Settings
+
+        s = Settings()  # type: ignore[call-arg]
+        assert s.MAILER_MODE == "console"
+
+    def test_mailer_mode_rejects_invalid_value(self) -> None:
+        """WHEN MAILER_MODE = 'smtp' (no soportado) → ValidationError."""
+        os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost:5432/db"
+        os.environ["SECRET_KEY"] = "a" * 64
+        os.environ["ENCRYPTION_KEY"] = "b" * 32
+        os.environ["MAILER_MODE"] = "smtp"
+        from app.core.config import Settings
+
+        with pytest.raises(ValidationError):
+            Settings()  # type: ignore[call-arg]
+
+    def test_refresh_token_expire_days_custom(self) -> None:
+        """WHEN REFRESH_TOKEN_EXPIRE_DAYS=30 → Settings usa el valor."""
+        os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost:5432/db"
+        os.environ["SECRET_KEY"] = "a" * 64
+        os.environ["ENCRYPTION_KEY"] = "b" * 32
+        os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "30"
+        from app.core.config import Settings
+
+        s = Settings()  # type: ignore[call-arg]
+        assert s.REFRESH_TOKEN_EXPIRE_DAYS == 30

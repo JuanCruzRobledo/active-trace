@@ -28,11 +28,22 @@ pydantic-settings==2.14.1
 python-dotenv==1.2.2
 
 # Auth / seguridad
-python-jose[cryptography]==3.5.0
+pyjwt==2.10.1
 argon2-cffi==25.1.0
 cryptography==48.0.0
 passlib==1.7.4
 bcrypt==4.0.1
+
+# 2FA (TOTP RFC 6238) + QR generation
+pyotp==2.9.0
+qrcode[pil]==7.4.2
+
+# Rate limiting (in-memory, single-process)
+slowapi==0.1.9
+limits==3.13.0
+
+# Email validation (Pydantic EmailStr)
+email-validator==2.2.0
 
 # OpenTelemetry (observabilidad)
 opentelemetry-api==1.42.1

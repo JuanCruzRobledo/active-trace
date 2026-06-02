@@ -22,7 +22,9 @@ _engine = None
 async_session_maker: async_sessionmaker[AsyncSession] | None = None
 
 
-def init_engine(database_url: str) -> None:
+def init_engine(
+    database_url: str, encryption_key: str | None = None
+) -> None:
     """Crea el engine async y la factory de sesiones.
 
     Debe llamarse una sola vez durante el lifespan de la aplicación.
@@ -30,6 +32,10 @@ def init_engine(database_url: str) -> None:
     Args:
         database_url: DSN PostgreSQL con driver asyncpg,
             ej. ``postgresql+asyncpg://user:pass@localhost:5432/db``.
+        encryption_key: Clave Fernet para las columnas ``EncryptedColumn``.
+            Si no se pasa, se lee de ``Settings()`` (cargada de ``.env``).
+            En tests se debe pasar explícitamente para no depender del
+            entorno.
     """
     global _engine, async_session_maker  # noqa: PLW0603
     _engine = create_async_engine(database_url, echo=False, pool_pre_ping=True)
@@ -38,6 +44,15 @@ def init_engine(database_url: str) -> None:
         expire_on_commit=False,
         class_=AsyncSession,
     )
+    # Asegurar que las columnas cifradas usen la clave real (no el placeholder).
+    # Importación local para evitar circular import en tiempo de carga del módulo.
+    from app.core.encryption import inject_encryption_keys  # noqa: PLC0415
+
+    if encryption_key is None:
+        from app.core.config import Settings  # noqa: PLC0415
+
+        encryption_key = Settings().ENCRYPTION_KEY  # type: ignore[call-arg]
+    inject_encryption_keys(encryption_key)
 
 
 async def close_engine() -> None:

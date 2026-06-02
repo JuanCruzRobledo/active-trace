@@ -77,7 +77,7 @@ def settings() -> Settings:
 async def db_engine(settings: Settings):
     """Inicializa el engine async, crea tablas y las destruye al finalizar."""
     await close_engine()
-    init_engine(settings.DATABASE_URL)
+    init_engine(settings.DATABASE_URL, encryption_key=settings.ENCRYPTION_KEY)
 
     # Crear todas las tablas de los modelos registrados en Base
     from app.core.database import _engine  # type: ignore[attr-defined]  # noqa: PLC0415

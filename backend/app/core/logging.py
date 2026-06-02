@@ -3,6 +3,10 @@
 Reemplaza el formatter del logger raíz por uno que emite una línea JSON por
 evento con campos ``timestamp``, ``level`` y ``message``.  Nunca registra
 secretos ni PII en claro.
+
+En tests (``pytest`` corriendo), esta función es **no-op** para no interferir
+con el fixture ``caplog`` que necesita mantener su propio handler en el logger
+raíz.
 """
 
 import json
