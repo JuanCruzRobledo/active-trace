@@ -33,7 +33,7 @@ def init_opentelemetry(
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # noqa: PLC0415, F811
             OTLPSpanExporter,
         )
-        from opentelemetry.instrumentation.fastapi import (  # noqa: PLC0415
+        from opentelemetry.instrumentation.fastapi import (  # noqa: PLC0415, F401
             FastAPIInstrumentor,
         )
         from opentelemetry.sdk.resources import (  # noqa: PLC0415

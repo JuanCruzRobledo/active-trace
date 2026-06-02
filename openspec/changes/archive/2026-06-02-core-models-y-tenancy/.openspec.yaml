@@ -1,0 +1,13 @@
+changeId: C-02
+changeName: core-models-y-tenancy
+description: "Multi-tenant foundation: Tenant model, base mixin, repository pattern, AES-256 encryption, soft delete, Alembic migration setup"
+createdAt: "2026-06-02T14:30:00Z"
+dependsOn:
+  - C-01
+governance: CRITICO
+status: propose
+artifacts:
+  proposal: proposal.md
+  design: design.md
+  specs: spec.md
+  tasks: tasks.md

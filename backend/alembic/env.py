@@ -21,6 +21,9 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# Importar modelos para que Alembic detecte sus tablas (autogenerate)
+from app.models.tenant import Tenant  # noqa: PLC0415, F401
+
 # Metadata de los modelos para autogenerate
 target_metadata = Base.metadata
 

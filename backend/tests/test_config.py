@@ -11,6 +11,7 @@ def clear_env() -> None:
     saved = {}
     keys = [
         "DATABASE_URL",
+        "DATABASE_URL_TEST",
         "SECRET_KEY",
         "ENCRYPTION_KEY",
         "ACCESS_TOKEN_EXPIRE_MINUTES",
@@ -75,7 +76,7 @@ class TestSettingsInvalid:
         from app.core.config import Settings
 
         with pytest.raises(ValidationError):
-            Settings()  # type: ignore[call-arg]
+            Settings(_env_file=None)  # type: ignore[call-arg]
 
     def test_fails_when_secret_key_too_short(self) -> None:
         """WHEN SECRET_KEY is shorter than 32 chars → Settings instantiation raises ValidationError."""

@@ -2,6 +2,9 @@
 
 Requiere una base de datos PostgreSQL de test accesible via ``DATABASE_URL_TEST``
 (o ``DATABASE_URL`` como fallback) en el entorno.
+
+Las tablas se crean al conectar y se dropean al cerrar la sesión de tests
+(scope ``session``), garantizando un estado limpio para cada corrida.
 """
 
 import os
@@ -13,35 +16,55 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
-from app.core.database import async_session_maker, init_engine, close_engine
+from app.core.database import Base, init_engine, close_engine, get_session_maker
+
+
+def _load_env_settings() -> Settings:
+    """Carga Settings desde .env + defaults mínimos."""
+    return Settings(
+        DATABASE_URL="placeholder",
+        SECRET_KEY="a" * 64,
+        ENCRYPTION_KEY="b" * 32,
+        ENVIRONMENT="development",
+        LOG_LEVEL="DEBUG",
+    )
 
 
 def _build_test_settings() -> Settings:
     """Construye un objeto Settings para el entorno de test.
 
-    Usa ``DATABASE_URL_TEST`` si está definida, o ``DATABASE_URL`` como
-    fallback.  Si ninguna está presente, el test que dependa de DB real
-    se omite (no se mockea — la DB real es parte del contrato).
+    Usa ``DATABASE_URL_TEST`` si está definida en el entorno o en ``.env``,
+    o ``DATABASE_URL`` como fallback.  Si ninguna está presente, el test que
+    dependa de DB real se omite (no se mockea — la DB real es parte del contrato).
     """
-    return Settings(  # type: ignore[call-arg]
-        DATABASE_URL=os.environ.get(
-            "DATABASE_URL_TEST",
-            os.environ.get("DATABASE_URL", "postgresql+asyncpg://trace:trace@localhost:5432/trace_test"),
-        ),
-        SECRET_KEY=os.environ.get("SECRET_KEY", "a" * 64),
-        ENCRYPTION_KEY=os.environ.get("ENCRYPTION_KEY", "b" * 32),
+    env = _load_env_settings()
+
+    test_db_url = (
+        os.environ.get("DATABASE_URL_TEST")
+        or env.DATABASE_URL_TEST
+        or os.environ.get("DATABASE_URL")
+        or env.DATABASE_URL
+        or "postgresql+asyncpg://trace:trace@localhost:5432/trace_test"
+    )
+
+    return Settings(
+        DATABASE_URL=test_db_url,
+        SECRET_KEY="a" * 64,
+        ENCRYPTION_KEY="b" * 32,
         ENVIRONMENT="development",
         LOG_LEVEL="DEBUG",
     )
 
 
 def db_available() -> bool:
-    """Indica si hay una base de datos PostgreSQL configurada para tests.
-
-    Retorna ``True`` si ``DATABASE_URL`` o ``DATABASE_URL_TEST`` están
-    presentes en el entorno.
-    """
-    return bool(os.environ.get("DATABASE_URL_TEST") or os.environ.get("DATABASE_URL"))
+    """Indica si hay una base de datos PostgreSQL configurada para tests."""
+    if os.environ.get("DATABASE_URL_TEST") or os.environ.get("DATABASE_URL"):
+        return True
+    try:
+        env = _load_env_settings()
+        return bool(env.DATABASE_URL_TEST or env.DATABASE_URL)
+    except Exception:
+        return False
 
 
 @pytest.fixture(scope="session")
@@ -52,18 +75,28 @@ def settings() -> Settings:
 
 @pytest_asyncio.fixture
 async def db_engine(settings: Settings):
-    """Inicializa el engine async y lo destruye al finalizar la sesión."""
+    """Inicializa el engine async, crea tablas y las destruye al finalizar."""
     await close_engine()
     init_engine(settings.DATABASE_URL)
+
+    # Crear todas las tablas de los modelos registrados en Base
+    from app.core.database import _engine  # type: ignore[attr-defined]  # noqa: PLC0415
+
+    async with _engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     yield
+
+    # Drop todas las tablas al finalizar el test
+    async with _engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
     await close_engine()
 
 
 @pytest_asyncio.fixture
 async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
     """Sesión async fresca para cada test."""
-    maker = async_session_maker
-    assert maker is not None
+    maker = get_session_maker()
     async with maker() as session:
         yield session
 

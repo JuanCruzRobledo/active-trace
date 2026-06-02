@@ -5,7 +5,7 @@ valores inválidos o variables requeridas ausentes SHALL impedir que la aplicaci
 inicie lanzando ``ValidationError``.
 """
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,6 +30,12 @@ class Settings(BaseSettings):
         "ej. postgresql+asyncpg://user:pass@localhost:5432/db",
     )
 
+    DATABASE_URL_TEST: str | None = Field(
+        default=None,
+        description="PostgreSQL DSN para tests (opcional, "
+        "usa DATABASE_URL como fallback si no se provee)",
+    )
+
     # ── Security ──────────────────────────────────────────────────────────
     SECRET_KEY: str = Field(
         ...,
@@ -40,8 +46,8 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = Field(
         ...,
         min_length=32,
-        max_length=32,
-        description="Clave AES-256 para cifrado en reposo (exactamente 32 caracteres)",
+        description="Clave AES-256 para cifrado en reposo (mínimo 32 caracteres; "
+        "puede ser texto plano o base64 — la normalización la hace EncryptionService)",
     )
 
     # ── JWT ───────────────────────────────────────────────────────────────
