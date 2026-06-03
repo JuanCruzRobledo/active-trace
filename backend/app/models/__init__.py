@@ -19,8 +19,11 @@ from app.models.tenant import Tenant
 from app.models.user_rol import UserRol
 from app.models.two_factor_challenge import TwoFactorChallenge
 from app.models.user import User
+from app.models.usuario import Usuario
+from app.models.asignacion import Asignacion
 
 __all__ = [
+    "Asignacion",
     "AuditLog",
     "BaseMixin",
     "Carrera",
@@ -32,6 +35,7 @@ __all__ = [
     "Rol",
     "RolPermiso",
     "Tenant",
+    "Usuario",
     "UserRol",
     "TwoFactorChallenge",
     "User",

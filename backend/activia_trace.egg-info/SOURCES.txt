@@ -30,6 +30,7 @@ app/core/security.py
 app/core/tenancy.py
 app/integrations/__init__.py
 app/models/__init__.py
+app/models/asignacion.py
 app/models/audit_log.py
 app/models/base.py
 app/models/carrera.py
@@ -44,7 +45,9 @@ app/models/tenant.py
 app/models/two_factor_challenge.py
 app/models/user.py
 app/models/user_rol.py
+app/models/usuario.py
 app/repositories/__init__.py
+app/repositories/asignacion_repository.py
 app/repositories/audit_log_repository.py
 app/repositories/base.py
 app/repositories/carrera_repository.py
@@ -58,12 +61,16 @@ app/repositories/rol_repository.py
 app/repositories/two_factor_challenge_repository.py
 app/repositories/user_repository.py
 app/repositories/user_rol_repository.py
+app/repositories/usuario_repository.py
 app/schemas/__init__.py
+app/schemas/asignacion.py
 app/schemas/auth.py
 app/schemas/carrera.py
 app/schemas/cohorte.py
 app/schemas/materia.py
+app/schemas/usuario.py
 app/services/__init__.py
+app/services/asignacion_service.py
 app/services/audit_service.py
 app/services/auth_service.py
 app/services/carrera_service.py
@@ -73,6 +80,7 @@ app/services/password_service.py
 app/services/permission_service.py
 app/services/token_service.py
 app/services/totp_service.py
+app/services/usuario_service.py
 app/workers/__init__.py
 app/workers/main.py
 tests/test_app_startup.py
