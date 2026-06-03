@@ -11,5 +11,8 @@ Thumbs.db
 .DS_Store
 .vscode/
 .idea/
+__pycache__/
+*.pyc
+
 
 *.env

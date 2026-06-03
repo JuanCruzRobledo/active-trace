@@ -3,7 +3,7 @@
 ## Purpose
 Define el sistema de autorización basado en Roles (RBAC) con permisos finos `modulo:accion`, implementado como catálogo administrable en datos (no hardcode). Los permisos se resuelven server-side por request, no se cachean en el JWT. Cada endpoint protegido declara el permiso requerido vía dependency `require_permission`; sin permiso explícito → `403 Forbidden`.
 
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Catálogo de Roles (Rol)
 
