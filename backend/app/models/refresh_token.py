@@ -55,6 +55,12 @@ class RefreshToken(Base, BaseMixin):
     )
     user_agent = Column(Text, nullable=True)
     created_ip = Column(String(64), nullable=True)
+    # UUID del actor real si este token fue emitido bajo impersonación.
+    # Se preserva durante refresh rotation para mantener la trazabilidad.
+    impersonated_by = Column(
+        PGUUID(as_uuid=True),
+        nullable=True,
+    )
 
     # Índice de tenant_id (de BaseMixin, explícito porque __table_args__ pisa
     # el del mixin) + índices de user_id para lookups por usuario.

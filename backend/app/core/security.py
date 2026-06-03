@@ -119,6 +119,7 @@ JWT_CLAIM_USER_ID: ClassVar[str] = "sub"
 JWT_CLAIM_TENANT_ID: ClassVar[str] = "tenant_id"
 JWT_CLAIM_ROLES: ClassVar[str] = "roles"
 JWT_CLAIM_TYPE: ClassVar[str] = "type"
+JWT_CLAIM_IMPERSONATED_BY: ClassVar[str] = "impersonated_by"
 JWT_TYPE_ACCESS: ClassVar[str] = "access"
 
 

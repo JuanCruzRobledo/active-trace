@@ -55,6 +55,7 @@ class TokenService:
         user_agent: str | None = None,
         created_ip: str | None = None,
         roles: list[str] | None = None,
+        impersonated_by: str | None = None,
     ) -> TokenPair:
         """Emite un par access+refresh para un usuario autenticado.
 
@@ -67,10 +68,17 @@ class TokenService:
             user_agent: User-Agent del cliente (opcional).
             created_ip: IP del cliente (opcional).
             roles: Lista de códigos de rol para incluir en el JWT.
+            impersonated_by: UUID del actor real si es impersonación
+                (opcional). Se incluye como claim ``impersonated_by`` en el JWT.
 
         Returns:
             TokenPair listo para devolver al cliente.
         """
+        # Extra claims para impersonación
+        extra_claims: dict[str, object] = {}
+        if impersonated_by is not None:
+            extra_claims["impersonated_by"] = impersonated_by
+
         # Access token
         access_token = create_access_token(
             user_id=user.id,
@@ -78,6 +86,7 @@ class TokenService:
             secret_key=self._secret_key,
             roles=roles or [],
             expires_minutes=self._settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+            extra_claims=extra_claims if extra_claims else None,
         )
 
         # Refresh token opaco
@@ -95,6 +104,7 @@ class TokenService:
             expires_at=expires_at,
             user_agent=user_agent,
             created_ip=created_ip,
+            impersonated_by=UUID(impersonated_by) if impersonated_by else None,
         )
 
         expires_in_seconds = self._settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
@@ -111,6 +121,7 @@ class TokenService:
         user_agent: str | None = None,
         ip: str | None = None,
         roles: list[str] | None = None,
+        impersonated_by: str | None = None,
     ) -> TokenPair:
         """Rota un refresh token: valida, revoca el anterior, emite nuevo par.
 
@@ -122,6 +133,8 @@ class TokenService:
             user_agent: User-Agent del cliente (opcional).
             ip: IP del cliente (opcional).
             roles: Lista de códigos de rol para incluir en el nuevo JWT.
+            impersonated_by: UUID del actor real si esta sesión está bajo
+                impersonación (opcional). Se preserva durante la rotación.
 
         Returns:
             TokenPair nuevo.
@@ -152,10 +165,15 @@ class TokenService:
         # Marcar el viejo como revocado
         await self._token_repo.revoke(stored.id)
 
-        # Emitir nuevo par
+        # Emitir nuevo par (preservando impersonated_by si existe)
+        imp_by: str | None = impersonated_by
+        if imp_by is None and stored.impersonated_by is not None:
+            imp_by = str(stored.impersonated_by)
+
         return await self.issue_token_pair(
             user=User(id=stored.user_id, tenant_id=self._tenant_id),
             user_agent=user_agent or stored.user_agent,
             created_ip=ip or stored.created_ip,
             roles=roles or [],
+            impersonated_by=imp_by,
         )

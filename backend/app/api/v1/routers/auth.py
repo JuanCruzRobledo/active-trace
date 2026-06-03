@@ -30,6 +30,7 @@ from app.core.rate_limit import (
     rate_limit_reset,
 )
 from app.core.security import SecurityError
+from app.repositories.audit_log_repository import AuditLogRepository
 from app.repositories.password_reset_token_repository import (
     PasswordResetTokenRepository,
 )
@@ -53,6 +54,7 @@ from app.schemas.auth import (
 )
 from app.services.auth_service import AuthService, LoginFailedError
 from app.services.password_service import PasswordService
+from app.services.audit_service import AuditService
 from app.services.token_service import TokenService
 from app.services.totp_service import TOTPService
 
@@ -85,6 +87,7 @@ def _build_auth_service(
     refresh_repo = RefreshTokenRepository(session=db, tenant_id=tenant_id)
     twofa_repo = TwoFactorChallengeRepository(session=db, tenant_id=tenant_id)
     reset_repo = PasswordResetTokenRepository(session=db, tenant_id=tenant_id)
+    audit_log_repo = AuditLogRepository(session=db, tenant_id=tenant_id)
     mailer = ConsoleMailSender()
 
     token_svc = TokenService(
@@ -92,6 +95,10 @@ def _build_auth_service(
         settings=settings,
         secret_key=settings.SECRET_KEY,
         tenant_id=tenant_id,
+    )
+    audit_svc = AuditService(
+        audit_log_repo=audit_log_repo,
+        settings=settings,
     )
     totp_svc = TOTPService(
         user_repo=user_repo,
@@ -119,6 +126,7 @@ def _build_auth_service(
         mailer=mailer,
         settings=settings,
         tenant_id=tenant_id,
+        audit_service=audit_svc,
     )
 
 

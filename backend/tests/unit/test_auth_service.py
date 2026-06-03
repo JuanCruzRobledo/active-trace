@@ -302,8 +302,14 @@ class TestRefresh:
     """``refresh`` rota el refresh token."""
 
     async def test_delegates_to_token_service(
-        self, service, token_service
+        self, service, token_service, refresh_token_repo, user_rol_repo
     ):
+        stored = MagicMock()
+        stored.user_id = uuid4()
+        stored.impersonated_by = None
+        refresh_token_repo.get_by_token_hash.return_value = stored
+        user_rol_repo.get_role_codigos_for_user.return_value = []
+
         result = await service.refresh("some-refresh-token")
 
         assert isinstance(result, TokenPair)
@@ -312,6 +318,7 @@ class TestRefresh:
             user_agent=None,
             ip="unknown",
             roles=[],
+            impersonated_by=None,
         )
 
 

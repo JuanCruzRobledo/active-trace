@@ -25,6 +25,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # Importar modelos para que Alembic detecte sus tablas (autogenerate)
+from app.models.audit_log import AuditLog  # noqa: E402, F401
 from app.models.password_reset_token import PasswordResetToken  # noqa: E402, F401
 from app.models.permiso import Permiso  # noqa: E402, F401
 from app.models.refresh_token import RefreshToken  # noqa: E402, F401

@@ -48,6 +48,7 @@ def _stored_token(**kwargs) -> MagicMock:
     t.user_id = kwargs.get("user_id", uuid4())
     t.user_agent = kwargs.get("user_agent", None)
     t.created_ip = kwargs.get("created_ip", None)
+    t.impersonated_by = kwargs.get("impersonated_by", None)
     t.is_revoked.return_value = kwargs.get("revoked", False)
     t.is_expired.return_value = kwargs.get("expired", False)
     return t

@@ -41,6 +41,7 @@ class RefreshTokenRepository(BaseRepository[RefreshToken]):
         expires_at: datetime,
         user_agent: str | None = None,
         created_ip: str | None = None,
+        impersonated_by: UUID | None = None,
     ) -> RefreshToken:
         """Crea un refresh token y lo persiste.
 
@@ -50,6 +51,7 @@ class RefreshTokenRepository(BaseRepository[RefreshToken]):
             expires_at: Timestamp de expiración.
             user_agent: User-Agent del cliente (opcional).
             created_ip: IP del cliente (opcional).
+            impersonated_by: UUID del actor real si es impersonación (opcional).
 
         Returns:
             RefreshToken instanciado.
@@ -61,6 +63,7 @@ class RefreshTokenRepository(BaseRepository[RefreshToken]):
             expires_at=expires_at,
             user_agent=user_agent,
             created_ip=created_ip,
+            impersonated_by=impersonated_by,
         )
         return await self.save(token)
 

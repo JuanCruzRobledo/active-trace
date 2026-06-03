@@ -28,6 +28,7 @@ from app.core.security import (
     hash_opaque_token,
     verify_password,
 )
+from app.repositories.audit_log_repository import AuditLogRepository
 from app.repositories.password_reset_token_repository import (
     PasswordResetTokenRepository,
 )
@@ -42,6 +43,7 @@ from app.schemas.auth import (
     TwoFactorChallengeResponse,
     UserMeResponse,
 )
+from app.services.audit_service import AuditService
 from app.services.token_service import TokenService
 from app.services.totp_service import TOTPService
 
@@ -85,6 +87,7 @@ class AuthService:
         mailer: MailSender,
         settings: Settings,
         tenant_id: UUID,
+        audit_service: AuditService | None = None,
     ) -> None:
         self._user_repo = user_repo
         self._refresh_token_repo = refresh_token_repo
@@ -97,8 +100,37 @@ class AuthService:
         self._mailer = mailer
         self._settings = settings
         self._tenant_id = tenant_id
+        self._audit_service = audit_service
 
     # ── Helpers ─────────────────────────────────────────────────────────
+
+    async def _register_audit(
+        self,
+        accion: str,
+        actor_id: UUID,
+        *,
+        detalle: dict | None = None,
+        ip: str | None = None,
+        user_agent: str | None = None,
+    ) -> None:
+        """Registra un evento de auditoría si el servicio está configurado.
+
+        Args:
+            accion: Código de acción.
+            actor_id: UUID del usuario que ejecutó la acción.
+            detalle: Contexto adicional (opcional).
+            ip: Dirección IP (opcional).
+            user_agent: User-Agent (opcional).
+        """
+        if self._audit_service is not None:
+            await self._audit_service.register(
+                accion=accion,
+                actor_id=actor_id,
+                tenant_id=self._tenant_id,
+                detalle=detalle,
+                ip=ip,
+                user_agent=user_agent,
+            )
 
     async def _get_user_roles(self, user_id: UUID) -> list[str]:
         """Carga los códigos de rol de un usuario desde la DB.
@@ -231,6 +263,9 @@ class AuthService:
                 "ip": ip,
             },
         )
+        await self._register_audit(
+            "LOGIN_OK", actor_id=user.id, ip=ip, user_agent=ua
+        )
 
         return pair
 
@@ -291,6 +326,9 @@ class AuthService:
                     "ip": ip,
                 },
             )
+            await self._register_audit(
+                "LOGIN_2FA_FAIL", actor_id=challenge.user_id, ip=ip
+            )
             raise TwoFactorFailedError("Invalid TOTP code")
 
         # Marcar challenge usado
@@ -316,6 +354,9 @@ class AuthService:
                 "tenant_id": str(self._tenant_id),
                 "ip": ip,
             },
+        )
+        await self._register_audit(
+            "LOGIN_2FA_OK", actor_id=challenge.user_id, ip=ip, user_agent=ua
         )
 
         return pair
@@ -355,12 +396,18 @@ class AuthService:
             else []
         )
 
+        # Preservar impersonated_by del token almacenado durante la rotación
+        imp_by: str | None = None
+        if stored is not None and stored.impersonated_by is not None:
+            imp_by = str(stored.impersonated_by)
+
         try:
             pair = await self._token_service.rotate_refresh(
                 refresh_token_str=refresh_token_str,
                 user_agent=ua,
                 ip=ip,
                 roles=roles,
+                impersonated_by=imp_by,
             )
         except SecurityError as exc:
             # Si es reuso, ya se auditó en token_service. Igual registramos.
@@ -381,6 +428,10 @@ class AuthService:
                 "ip": ip,
             },
         )
+        if stored is not None:
+            await self._register_audit(
+                "REFRESH_OK", actor_id=stored.user_id, ip=ip, user_agent=ua
+            )
 
         return pair
 
@@ -411,6 +462,7 @@ class AuthService:
                 "tenant_id": str(self._tenant_id),
             },
         )
+        await self._register_audit("LOGOUT", actor_id=current_user_id)
 
     # ── Forgot / Reset (delegado) ───────────────────────────────────────
 

@@ -1,10 +1,13 @@
-"""Audit helper — log estructurado de eventos de seguridad (C-03).
+"""Audit helper — log estructurado de eventos de seguridad (C-03/C-05).
 
 Decisión D9 (design.md): ``record(code, payload)`` escribe un log JSON
-con prefijo ``audit.`` y los campos del payload. **No persiste en DB
-todavía** — la tabla ``audit_log`` llega en C-05. Los call sites de
-C-03 ya quedan listos detrás de este helper, así C-05 enchufa la DB
-sin tocar código de servicios ni routers.
+con prefijo ``audit.`` y los campos del payload.
+
+**C-05**: Se agregó ``AuditService`` (``app/services/audit_service.py``) como
+reemplazo primario con persistencia en DB. Este módulo continúa funcionando
+como fallback JSON para backward compatibility — los call sites que quieran
+persistencia en DB deben usar ``AuditService.register()`` además de (o en
+reemplazo de) ``audit.record()``.
 
 Codes de C-03 (ver ``specs/auth-jwt/spec.md`` y ``two-factor-auth/spec.md``):
 
@@ -16,6 +19,13 @@ Codes de C-03 (ver ``specs/auth-jwt/spec.md`` y ``two-factor-auth/spec.md``):
 - ``TOTP_ENROLL_STARTED`` / ``TOTP_ENROLL_CONFIRMED``
 - ``RATE_LIMIT_HIT``
 - ``TOKEN_SIGNATURE_INVALID``
+
+Codes de C-05:
+
+- ``CALIFICACIONES_IMPORTAR`` / ``PADRON_CARGAR``
+- ``COMUNICACION_ENVIAR`` / ``ASIGNACION_MODIFICAR``
+- ``LIQUIDACION_CERRAR``
+- ``IMPERSONACION_INICIAR`` / ``IMPERSONACION_FINALIZAR``
 """
 
 from __future__ import annotations
@@ -60,6 +70,7 @@ def record(code: str, payload: dict[str, Any] | None = None) -> None:
 # Whitelist de codes conocidos (defense in depth contra typos).
 _VALID_CODES: frozenset[str] = frozenset(
     {
+        # C-03 (auth)
         "LOGIN_OK",
         "LOGIN_FAIL",
         "LOGIN_2FA_REQUIRED",
@@ -74,5 +85,13 @@ _VALID_CODES: frozenset[str] = frozenset(
         "TOTP_ENROLL_CONFIRMED",
         "RATE_LIMIT_HIT",
         "TOKEN_SIGNATURE_INVALID",
+        # C-05 (audit log + impersonation)
+        "CALIFICACIONES_IMPORTAR",
+        "PADRON_CARGAR",
+        "COMUNICACION_ENVIAR",
+        "ASIGNACION_MODIFICAR",
+        "LIQUIDACION_CERRAR",
+        "IMPERSONACION_INICIAR",
+        "IMPERSONACION_FINALIZAR",
     }
 )

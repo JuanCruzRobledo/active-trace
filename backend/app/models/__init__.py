@@ -5,6 +5,7 @@ Importar este paquete fuerza la registración de todas las tablas en
 ``Base.metadata.create_all`` en tests).
 """
 
+from app.models.audit_log import AuditLog
 from app.models.base import BaseMixin
 from app.models.password_reset_token import PasswordResetToken
 from app.models.permiso import Permiso
@@ -17,6 +18,7 @@ from app.models.two_factor_challenge import TwoFactorChallenge
 from app.models.user import User
 
 __all__ = [
+    "AuditLog",
     "BaseMixin",
     "PasswordResetToken",
     "Permiso",

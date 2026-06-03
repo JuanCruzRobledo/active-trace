@@ -41,11 +41,14 @@ class UserContext:
         user_id: UUID del usuario (claim ``sub``).
         tenant_id: UUID del tenant (claim ``tenant_id``).
         roles: Lista de roles (claim ``roles``; vacío en C-03, poblado en C-04).
+        impersonated_by_id: UUID del actor real si el usuario está siendo
+            impersonado (claim ``impersonated_by``); ``None`` en sesión normal.
     """
 
     user_id: UUID
     tenant_id: UUID
     roles: list[str] = field(default_factory=list)
+    impersonated_by_id: UUID | None = None
 
 
 # ── DB session ─────────────────────────────────────────────────────────
@@ -127,6 +130,7 @@ async def get_current_user(
 
     # Extraer claims
     from app.core.security import (  # noqa: PLC0415
+        JWT_CLAIM_IMPERSONATED_BY,
         JWT_CLAIM_TENANT_ID,
         JWT_CLAIM_USER_ID,
         JWT_CLAIM_ROLES,
@@ -135,6 +139,7 @@ async def get_current_user(
     user_id_str = payload.get(JWT_CLAIM_USER_ID)
     tenant_id_str = payload.get(JWT_CLAIM_TENANT_ID)
     roles: list[str] = payload.get(JWT_CLAIM_ROLES, [])
+    impersonated_by_str: str | None = payload.get(JWT_CLAIM_IMPERSONATED_BY)
 
     if not user_id_str or not tenant_id_str:
         raise HTTPException(
@@ -146,6 +151,7 @@ async def get_current_user(
         user_id=UUID(user_id_str),
         tenant_id=UUID(tenant_id_str),
         roles=roles,
+        impersonated_by_id=UUID(impersonated_by_str) if impersonated_by_str else None,
     )
 
 

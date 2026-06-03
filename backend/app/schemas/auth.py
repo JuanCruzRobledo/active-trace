@@ -254,6 +254,41 @@ class ResetRequest(BaseModel):
     new_password: StrongPassword
 
 
+# ---------------------------------------------------------------------------
+# Impersonation
+# ---------------------------------------------------------------------------
+
+
+class ImpersonateRequest(BaseModel):
+    """Body de ``POST /api/auth/impersonate``.
+
+    Attributes:
+        target_user_id: UUID del usuario a impersonar.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    target_user_id: str = Field(min_length=36, max_length=36)
+
+
+class ImpersonateStopResponse(BaseModel):
+    """Respuesta de ``POST /api/auth/impersonate/stop``.
+
+    Attributes:
+        access_token: Nuevo JWT para el actor real.
+        refresh_token: Nuevo refresh token para el actor real.
+        token_type: Siempre ``"bearer"``.
+        expires_in: TTL del access token en segundos.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    access_token: str
+    refresh_token: str
+    token_type: str = Field(default="bearer", frozen=True)
+    expires_in: int = Field(gt=0, le=86400)
+
+
 class PasswordResetRequest(BaseModel):
     """Body de un futuro ``POST /api/auth/password`` (cambio autenticado).
 
