@@ -39,5 +39,16 @@
       "prompts": 1,
       "description": "C-04 RBAC verify: 17/17 C-04 tests, 477/477 suite, fixed pre-existing migration tests (password tutuca05→nikolan)"
     }
+      {
+      "id": "a8303b2f",
+      "created_by": "active-trace",
+      "created_at": "2026-06-03T18:00:00Z",
+      "type": "engram-import",
+      "source_change": "c-05-audit-log",
+      "sessions": 1,
+      "memories": 3,
+      "prompts": 1,
+      "description": "C-05 audit-log archived: 41/41 tasks, manual tests OK (impersonacion + 2FA), scripts/seed.py creado"
+    }
   ]
 }
