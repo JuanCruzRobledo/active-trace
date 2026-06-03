@@ -1,0 +1,19 @@
+# ── Desarrollo ───────────────────────────────────────────────────────────────
+# activia-trace — dependencias de desarrollo (sobreescribe production)
+# Incluye: tests, linting, type checking, coverage
+# Uso:
+#   pip install -r requirements-dev.txt
+
+-r requirements.txt
+
+# Testing
+pytest==9.0.3
+pytest-asyncio==1.4.0
+pytest-cov==7.1.0
+httpx==0.28.1
+httpcore==1.0.9
+
+# Linting & type checking
+ruff==0.15.15
+mypy==2.1.0
+mypy_extensions==1.1.0
