@@ -23,7 +23,7 @@ def _test_db_url() -> str:
     return (
         os.environ.get("DATABASE_URL_TEST")
         or os.environ.get("DATABASE_URL")
-        or "postgresql+asyncpg://postgres:nikolan@localhost:5432/trace_test"
+        or "postgresql+asyncpg://postgres:tutuca05@localhost:5432/trace_test"
     )
 
 
@@ -41,7 +41,7 @@ class TestAlembicMigrations:
 
         conn = await asyncpg.connect(
             user="postgres",
-            password="nikolan",
+            password="tutuca05",
             database="trace_test",
             host="localhost",
             port=5432,
@@ -75,7 +75,7 @@ class TestAlembicMigrations:
         async def verify():
             conn = await asyncpg.connect(
                 user="postgres",
-                password="nikolan",
+                password="tutuca05",
                 database="trace_test",
                 host="localhost",
                 port=5432,

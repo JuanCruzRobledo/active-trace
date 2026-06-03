@@ -11,6 +11,7 @@ raíz.
 
 import json
 import logging
+import os
 import sys
 from datetime import UTC, datetime
 
@@ -39,7 +40,17 @@ def configure_json_logging(level: str = "DEBUG") -> None:
 
     Args:
         level: Nivel de log mínimo (``DEBUG``, ``INFO``, ``WARNING``, etc.).
+
+    Note:
+        Si pytest está corriendo, esta función es **no-op** para no interferir
+        con el fixture ``caplog`` que necesita sus propios handlers en el logger
+        raíz.
     """
+    # Detectar si estamos en un test de pytest — en ese caso no tocar los
+    # handlers porque caplog los gestiona.
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        return
+
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JSONFormatter())
 

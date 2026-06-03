@@ -18,12 +18,18 @@ from app.core.database import Base
 config = context.config
 
 # Configurar logging
+# NOTA: disable_existing_loggers=False es crítico — sin esto los loggers
+# existentes (como "audit", "mail") se deshabilitan silenciosamente, lo que
+# rompe tests que dependen de caplog después de correr migraciones.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # Importar modelos para que Alembic detecte sus tablas (autogenerate)
 from app.models.password_reset_token import PasswordResetToken  # noqa: E402, F401
+from app.models.permiso import Permiso  # noqa: E402, F401
 from app.models.refresh_token import RefreshToken  # noqa: E402, F401
+from app.models.rol import Rol  # noqa: E402, F401
+from app.models.rol_permiso import RolPermiso  # noqa: E402, F401
 from app.models.tenant import Tenant  # noqa: E402, F401
 from app.models.two_factor_challenge import TwoFactorChallenge  # noqa: E402, F401
 from app.models.user import User  # noqa: E402, F401

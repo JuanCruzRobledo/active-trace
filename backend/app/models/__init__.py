@@ -7,7 +7,10 @@ Importar este paquete fuerza la registración de todas las tablas en
 
 from app.models.base import BaseMixin
 from app.models.password_reset_token import PasswordResetToken
+from app.models.permiso import Permiso
 from app.models.refresh_token import RefreshToken
+from app.models.rol import Rol
+from app.models.rol_permiso import RolPermiso
 from app.models.tenant import Tenant
 from app.models.two_factor_challenge import TwoFactorChallenge
 from app.models.user import User
@@ -15,7 +18,10 @@ from app.models.user import User
 __all__ = [
     "BaseMixin",
     "PasswordResetToken",
+    "Permiso",
     "RefreshToken",
+    "Rol",
+    "RolPermiso",
     "Tenant",
     "TwoFactorChallenge",
     "User",

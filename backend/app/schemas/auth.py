@@ -288,7 +288,8 @@ class UserMeResponse(BaseModel):
         email: Email del usuario.
         is_active: Si el usuario está habilitado.
         totp_enabled: Si tiene 2FA enrolado y activo.
-        roles: Lista de roles (siempre vacía en C-03; C-04 la puebla).
+        roles: Lista de roles (del JWT, poblado en C-04).
+        permisos: Permisos efectivos del usuario (resueltos server-side).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -299,3 +300,4 @@ class UserMeResponse(BaseModel):
     is_active: bool
     totp_enabled: bool
     roles: list[str] = Field(default_factory=list)
+    permisos: list[str] = Field(default_factory=list)

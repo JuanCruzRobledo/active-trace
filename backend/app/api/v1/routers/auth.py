@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
@@ -129,6 +129,7 @@ def _build_auth_service(
 async def login(
     body: LoginRequest,
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
     """Autentica un usuario por email+password.
@@ -160,6 +161,7 @@ async def login(
 async def verify_2fa(
     body: TOTPVerifyRequest,
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> TokenPair:
     """Verifica un challenge 2FA con código TOTP."""
@@ -187,6 +189,7 @@ async def verify_2fa(
 async def refresh(
     body: RefreshRequest,
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> TokenPair:
     """Rota un refresh token y emite un nuevo par."""
@@ -232,6 +235,7 @@ async def logout(
 async def forgot(
     body: ForgotRequest,
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """Solicita un reset de contraseña (no-op si el email no existe)."""
@@ -249,6 +253,7 @@ async def forgot(
 async def reset(
     body: ResetRequest,
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """Confirma un reset de contraseña con el token recibido por email."""
@@ -352,6 +357,13 @@ async def get_me(
             detail="User not found",
         )
 
+    from app.services.permission_service import PermissionService  # noqa: PLC0415
+
+    perm_svc = PermissionService(db, tid)
+    permisos = await perm_svc.get_effective_permissions(
+        current_user.roles
+    )
+
     return UserMeResponse(
         id=str(user.id),
         tenant_id=str(user.tenant_id),
@@ -359,4 +371,5 @@ async def get_me(
         is_active=user.is_active,
         totp_enabled=user.totp_enabled,
         roles=current_user.roles,
+        permisos=sorted(permisos),
     )

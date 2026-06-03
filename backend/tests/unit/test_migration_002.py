@@ -5,7 +5,7 @@ password_reset_token, two_factor_challenge) con todos los índices, FKs y
 constraints esperados, y que el ciclo upgrade → downgrade → upgrade es limpio.
 
 Requiere PostgreSQL real (``DATABASE_URL_TEST`` en el entorno o fallback
-a ``postgres:nikolan@localhost:5432/trace_test``).
+a ``postgres:tutuca05@localhost:5432/trace_test``).
 
 Nota: la tabla de usuarios se llama ``users`` (no ``user``) porque
 ``user`` es palabra reservada de PostgreSQL. El modelo de SQLAlchemy
@@ -31,7 +31,7 @@ def _test_db_url() -> str:
     return (
         os.environ.get("DATABASE_URL_TEST")
         or os.environ.get("DATABASE_URL")
-        or "postgresql+asyncpg://postgres:nikolan@localhost:5432/trace_test"
+        or "postgresql+asyncpg://postgres:tutuca05@localhost:5432/trace_test"
     )
 
 
@@ -41,7 +41,7 @@ async def _table_exists(db: str, table_name: str) -> bool:
 
     conn = await asyncpg.connect(
         user="postgres",
-        password="nikolan",
+        password="tutuca05",
         database=db,
         host="localhost",
         port=5432,
@@ -63,7 +63,7 @@ async def _get_columns(db: str, table_name: str) -> set[str]:
 
     conn = await asyncpg.connect(
         user="postgres",
-        password="nikolan",
+        password="tutuca05",
         database=db,
         host="localhost",
         port=5432,
@@ -87,7 +87,7 @@ def _clean_test_db():
     async def drop():
         conn = await asyncpg.connect(
             user="postgres",
-            password="nikolan",
+            password="tutuca05",
             database="trace_test",
             host="localhost",
             port=5432,
@@ -218,7 +218,7 @@ class TestMigration002Upgrade:
 
             conn = await asyncpg.connect(
                 user="postgres",
-                password="nikolan",
+                password="tutuca05",
                 database="trace_test",
                 host="localhost",
                 port=5432,
@@ -252,7 +252,7 @@ class TestMigration002Upgrade:
 
             conn = await asyncpg.connect(
                 user="postgres",
-                password="nikolan",
+                password="tutuca05",
                 database="trace_test",
                 host="localhost",
                 port=5432,
@@ -299,7 +299,7 @@ class TestMigration002Upgrade:
 
             conn = await asyncpg.connect(
                 user="postgres",
-                password="nikolan",
+                password="tutuca05",
                 database="trace_test",
                 host="localhost",
                 port=5432,

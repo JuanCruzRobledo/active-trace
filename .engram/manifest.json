@@ -16,6 +16,14 @@
       "sessions": 4,
       "memories": 15,
       "prompts": 10
+    },
+    {
+      "id": "233c0f8b",
+      "created_by": "Lauti Ferreria",
+      "created_at": "2026-06-03T01:10:01Z",
+      "sessions": 4,
+      "memories": 10,
+      "prompts": 10
     }
   ]
 }

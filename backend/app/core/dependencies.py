@@ -7,7 +7,7 @@ Implementado en C-03
     - ``get_current_user``: extrae usuario autenticado del JWT.
     - ``UserContext``: modelo de datos del usuario autenticado.
 
-Reservado para C-04
+Implementado en C-04
     - ``require_permission``: verifica permiso ``modulo:accion``.
 """
 
@@ -54,12 +54,23 @@ class UserContext:
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency que provee una sesión async por request.
 
-    Garantiza que la sesión se cierre al finalizar la request, incluso si
-    el handler lanza una excepción (``finally``).
+    Commitea automáticamente si el handler termina sin error; hace
+    rollback si lanza excepción.  Sin este commit, cualquier write
+    (refresh token, 2FA challenge, reset token, etc.) se pierde porque
+    ``async_session.close()`` hace rollback implícito de la transacción.
+
+    Regla del equipo: **nunca llamar a ``session.commit()`` en services
+    ni repositories** — el commit es responsabilidad exclusiva de esta
+    dependency.
     """
     maker = get_session_maker()
     async with maker() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 # ── Authenticated user ─────────────────────────────────────────────────
@@ -136,3 +147,30 @@ async def get_current_user(
         tenant_id=UUID(tenant_id_str),
         roles=roles,
     )
+
+
+# ── Permission check ─────────────────────────────────────────────────
+
+
+def require_permission(permiso: str):
+    """Factory that returns a FastAPI dependency to check permissions.
+
+    Usage: ``Depends(require_permission("calificaciones:importar"))``
+    """
+    async def _check_permission(
+        current_user: UserContext = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> bool:
+        from app.services.permission_service import PermissionService  # noqa: PLC0415
+
+        service = PermissionService(db, current_user.tenant_id)
+        has_perm = await service.has_permission(
+            current_user.roles, permiso
+        )
+        if not has_perm:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permission denied",
+            )
+        return True
+    return _check_permission
