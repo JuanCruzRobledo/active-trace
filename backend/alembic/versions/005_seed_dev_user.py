@@ -33,11 +33,22 @@ _DEV_TENANT_ID = "00000000-0000-0000-0000-000000000001"
 
 
 def upgrade() -> None:
-    """Insert dev user + role assignments."""
+    """Insert dev tenant + dev user + role assignments."""
     # Import here to avoid circular imports at module level
     from app.core.security import hash_password  # noqa: PLC0415
 
     conn = op.get_bind()
+
+    # 0. Ensure dev tenant exists before inserting user (FK requirement)
+    #    tenant_id = id for the root tenant record (self-reference)
+    conn.execute(
+        sa.text(
+            "INSERT INTO tenant (id, tenant_id, nombre, created_at, updated_at) "
+            "VALUES (:tid, :tid, 'Tenant Dev', now(), now()) "
+            "ON CONFLICT (id) DO NOTHING"
+        ),
+        {"tid": _DEV_TENANT_ID},
+    )
 
     # 1. Generate Argon2id hash for the known dev password
     pwd_hash = hash_password("Admin123456!")

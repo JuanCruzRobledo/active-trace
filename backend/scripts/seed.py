@@ -84,8 +84,8 @@ async def ensure_tenant_exists(session) -> None:
 
     await session.execute(
         text(
-            "INSERT INTO tenant (id, nombre, dominio, created_at, updated_at) "
-            "VALUES (:tid, 'Tenant Dev', 'dev.trace.local', now(), now())"
+            "INSERT INTO tenant (id, tenant_id, nombre, created_at, updated_at) "
+            "VALUES (:tid, :tid, 'Tenant Dev', now(), now())"
         ),
         {"tid": DEV_TENANT_ID},
     )

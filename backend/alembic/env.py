@@ -45,7 +45,10 @@ target_metadata.namespace = None
 
 
 def get_database_url() -> str:
-    """Obtiene DATABASE_URL desde la configuración tipada."""
+    """Obtiene DATABASE_URL desde la configuración tipada.
+
+    Prioridad: variable de entorno DATABASE_URL > alembic.ini sqlalchemy.url
+    """
     settings = Settings()  # type: ignore[call-arg]
     return settings.DATABASE_URL
 
@@ -56,7 +59,7 @@ def run_migrations_offline() -> None:
     Configura el contexto con solo la URL y el script genera SQL en
     lugar de ejecutarlo contra la base de datos.
     """
-    url = config.get_main_option("sqlalchemy.url", get_database_url())
+    url = get_database_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -80,7 +83,7 @@ async def run_async_migrations() -> None:
 
     Crea un engine async, obtiene una conexión y ejecuta las migraciones.
     """
-    url = config.get_main_option("sqlalchemy.url", get_database_url())
+    url = get_database_url()
     engine = create_async_engine(url)
 
     async with engine.connect() as connection:

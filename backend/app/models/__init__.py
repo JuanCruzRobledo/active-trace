@@ -7,6 +7,9 @@ Importar este paquete fuerza la registración de todas las tablas en
 
 from app.models.audit_log import AuditLog
 from app.models.base import BaseMixin
+from app.models.carrera import Carrera
+from app.models.cohorte import Cohorte
+from app.models.materia import Materia
 from app.models.password_reset_token import PasswordResetToken
 from app.models.permiso import Permiso
 from app.models.refresh_token import RefreshToken
@@ -20,6 +23,9 @@ from app.models.user import User
 __all__ = [
     "AuditLog",
     "BaseMixin",
+    "Carrera",
+    "Cohorte",
+    "Materia",
     "PasswordResetToken",
     "Permiso",
     "RefreshToken",
