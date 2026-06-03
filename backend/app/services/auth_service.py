@@ -36,6 +36,7 @@ from app.repositories.two_factor_challenge_repository import (
     TwoFactorChallengeRepository,
 )
 from app.repositories.user_repository import UserRepository
+from app.repositories.user_rol_repository import UserRolRepository
 from app.schemas.auth import (
     TokenPair,
     TwoFactorChallengeResponse,
@@ -80,6 +81,7 @@ class AuthService:
         token_service: TokenService,
         totp_service: TOTPService,
         password_service: PasswordService,
+        user_rol_repo: UserRolRepository,
         mailer: MailSender,
         settings: Settings,
         tenant_id: UUID,
@@ -91,9 +93,23 @@ class AuthService:
         self._token_service = token_service
         self._totp_service = totp_service
         self._password_service = password_service
+        self._user_rol_repo = user_rol_repo
         self._mailer = mailer
         self._settings = settings
         self._tenant_id = tenant_id
+
+    # ── Helpers ─────────────────────────────────────────────────────────
+
+    async def _get_user_roles(self, user_id: UUID) -> list[str]:
+        """Carga los códigos de rol de un usuario desde la DB.
+
+        Args:
+            user_id: UUID del usuario.
+
+        Returns:
+            Lista de códigos (ej: ``["PROFESOR"]``), vacío si no tiene roles.
+        """
+        return await self._user_rol_repo.get_role_codigos_for_user(user_id)
 
     # ── Login ───────────────────────────────────────────────────────────
 
@@ -199,10 +215,12 @@ class AuthService:
             )
 
         # Login exitoso sin 2FA
+        roles = await self._get_user_roles(user.id)
         pair = await self._token_service.issue_token_pair(
             user=user,
             user_agent=ua,
             created_ip=ip,
+            roles=roles,
         )
 
         record(
@@ -283,10 +301,12 @@ class AuthService:
         if user is None:
             raise SecurityError("User not found")
 
+        roles = await self._get_user_roles(user.id)
         pair = await self._token_service.issue_token_pair(
             user=user,
             user_agent=ua,
             created_ip=ip,
+            roles=roles,
         )
 
         record(
@@ -326,11 +346,21 @@ class AuthService:
         )
         ip = request.client.host if request and request.client else "unknown"
 
+        # Cargar roles del usuario antes de rotar (para incluirlos en el nuevo JWT)
+        token_hash = hash_opaque_token(refresh_token_str)
+        stored = await self._refresh_token_repo.get_by_token_hash(token_hash)
+        roles = (
+            await self._get_user_roles(stored.user_id)
+            if stored is not None
+            else []
+        )
+
         try:
             pair = await self._token_service.rotate_refresh(
                 refresh_token_str=refresh_token_str,
                 user_agent=ua,
                 ip=ip,
+                roles=roles,
             )
         except SecurityError as exc:
             # Si es reuso, ya se auditó en token_service. Igual registramos.

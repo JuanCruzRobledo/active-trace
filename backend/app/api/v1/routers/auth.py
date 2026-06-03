@@ -38,6 +38,7 @@ from app.repositories.two_factor_challenge_repository import (
     TwoFactorChallengeRepository,
 )
 from app.repositories.user_repository import UserRepository
+from app.repositories.user_rol_repository import UserRolRepository
 from app.schemas.auth import (
     ForgotRequest,
     LoginRequest,
@@ -80,6 +81,7 @@ def _build_auth_service(
     settings = Settings()  # type: ignore[call-arg]
 
     user_repo = UserRepository(session=db, tenant_id=tenant_id)
+    user_rol_repo = UserRolRepository(session=db, tenant_id=tenant_id)
     refresh_repo = RefreshTokenRepository(session=db, tenant_id=tenant_id)
     twofa_repo = TwoFactorChallengeRepository(session=db, tenant_id=tenant_id)
     reset_repo = PasswordResetTokenRepository(session=db, tenant_id=tenant_id)
@@ -113,6 +115,7 @@ def _build_auth_service(
         token_service=token_svc,
         totp_service=totp_svc,
         password_service=pwd_svc,
+        user_rol_repo=user_rol_repo,
         mailer=mailer,
         settings=settings,
         tenant_id=tenant_id,

@@ -54,6 +54,7 @@ class TokenService:
         user: User,
         user_agent: str | None = None,
         created_ip: str | None = None,
+        roles: list[str] | None = None,
     ) -> TokenPair:
         """Emite un par access+refresh para un usuario autenticado.
 
@@ -65,6 +66,7 @@ class TokenService:
             user: Usuario autenticado (debe tener PK asignada).
             user_agent: User-Agent del cliente (opcional).
             created_ip: IP del cliente (opcional).
+            roles: Lista de códigos de rol para incluir en el JWT.
 
         Returns:
             TokenPair listo para devolver al cliente.
@@ -74,7 +76,7 @@ class TokenService:
             user_id=user.id,
             tenant_id=self._tenant_id,
             secret_key=self._secret_key,
-            roles=[],
+            roles=roles or [],
             expires_minutes=self._settings.ACCESS_TOKEN_EXPIRE_MINUTES,
         )
 
@@ -108,6 +110,7 @@ class TokenService:
         refresh_token_str: str,
         user_agent: str | None = None,
         ip: str | None = None,
+        roles: list[str] | None = None,
     ) -> TokenPair:
         """Rota un refresh token: valida, revoca el anterior, emite nuevo par.
 
@@ -118,6 +121,7 @@ class TokenService:
             refresh_token_str: Token opaco en claro (del body).
             user_agent: User-Agent del cliente (opcional).
             ip: IP del cliente (opcional).
+            roles: Lista de códigos de rol para incluir en el nuevo JWT.
 
         Returns:
             TokenPair nuevo.
@@ -153,4 +157,5 @@ class TokenService:
             user=User(id=stored.user_id, tenant_id=self._tenant_id),
             user_agent=user_agent or stored.user_agent,
             created_ip=ip or stored.created_ip,
+            roles=roles or [],
         )

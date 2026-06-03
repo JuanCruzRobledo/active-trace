@@ -5,7 +5,7 @@ password_reset_token, two_factor_challenge) con todos los índices, FKs y
 constraints esperados, y que el ciclo upgrade → downgrade → upgrade es limpio.
 
 Requiere PostgreSQL real (``DATABASE_URL_TEST`` en el entorno o fallback
-a ``postgres:tutuca05@localhost:5432/trace_test``).
+a ``postgres:nikolan@localhost:5432/trace_test``).
 
 Nota: la tabla de usuarios se llama ``users`` (no ``user``) porque
 ``user`` es palabra reservada de PostgreSQL. El modelo de SQLAlchemy
@@ -31,7 +31,7 @@ def _test_db_url() -> str:
     return (
         os.environ.get("DATABASE_URL_TEST")
         or os.environ.get("DATABASE_URL")
-        or "postgresql+asyncpg://postgres:tutuca05@localhost:5432/trace_test"
+        or "postgresql+asyncpg://postgres:nikolan@localhost:5432/trace_test"
     )
 
 
@@ -41,7 +41,7 @@ async def _table_exists(db: str, table_name: str) -> bool:
 
     conn = await asyncpg.connect(
         user="postgres",
-        password="tutuca05",
+        password="nikolan",
         database=db,
         host="localhost",
         port=5432,
@@ -63,7 +63,7 @@ async def _get_columns(db: str, table_name: str) -> set[str]:
 
     conn = await asyncpg.connect(
         user="postgres",
-        password="tutuca05",
+        password="nikolan",
         database=db,
         host="localhost",
         port=5432,
@@ -80,25 +80,34 @@ async def _get_columns(db: str, table_name: str) -> set[str]:
 
 
 def _clean_test_db():
-    """Limpia las tablas de test (por si quedaron de runs previos)."""
+    """Limpia las tablas de test (por si quedaron de runs previos).
+
+    Incluye todas las tablas conocidas hasta la migración 004.
+    El orden importa: primero las que tienen FKs entrantes, después las
+    referenciadas, y por último alembic_version.
+    """
     import asyncio
     import asyncpg
 
     async def drop():
         conn = await asyncpg.connect(
             user="postgres",
-            password="tutuca05",
+            password="nikolan",
             database="trace_test",
             host="localhost",
             port=5432,
         )
         for table in [
-            "two_factor_challenge",
-            "password_reset_token",
-            "refresh_token",
-            "users",
-            "tenant",
-            "alembic_version",
+            "user_rol",              # 004
+            "rol_permiso",           # 003
+            "rol",                   # 003
+            "permiso",               # 003
+            "two_factor_challenge",  # 002
+            "password_reset_token",  # 002
+            "refresh_token",         # 002
+            "users",                 # 002
+            "tenant",                # 001
+            "alembic_version",       # alembic
         ]:
             await conn.execute(f"DROP TABLE IF EXISTS {table} CASCADE")
         await conn.close()
@@ -218,7 +227,7 @@ class TestMigration002Upgrade:
 
             conn = await asyncpg.connect(
                 user="postgres",
-                password="tutuca05",
+                password="nikolan",
                 database="trace_test",
                 host="localhost",
                 port=5432,
@@ -252,7 +261,7 @@ class TestMigration002Upgrade:
 
             conn = await asyncpg.connect(
                 user="postgres",
-                password="tutuca05",
+                password="nikolan",
                 database="trace_test",
                 host="localhost",
                 port=5432,
@@ -299,7 +308,7 @@ class TestMigration002Upgrade:
 
             conn = await asyncpg.connect(
                 user="postgres",
-                password="tutuca05",
+                password="nikolan",
                 database="trace_test",
                 host="localhost",
                 port=5432,

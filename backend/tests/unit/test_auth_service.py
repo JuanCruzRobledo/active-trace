@@ -112,6 +112,13 @@ def mailer():
 
 
 @pytest.fixture
+def user_rol_repo():
+    mock = AsyncMock()
+    mock.get_role_codigos_for_user.return_value = []
+    return mock
+
+
+@pytest.fixture
 def service(
     user_repo,
     refresh_token_repo,
@@ -120,6 +127,7 @@ def service(
     token_service,
     totp_service,
     password_service,
+    user_rol_repo,
     mailer,
     settings,
     tenant_id,
@@ -132,6 +140,7 @@ def service(
         token_service=token_service,
         totp_service=totp_service,
         password_service=password_service,
+        user_rol_repo=user_rol_repo,
         mailer=mailer,
         settings=settings,
         tenant_id=tenant_id,
@@ -302,6 +311,7 @@ class TestRefresh:
             refresh_token_str="some-refresh-token",
             user_agent=None,
             ip="unknown",
+            roles=[],
         )
 
 
