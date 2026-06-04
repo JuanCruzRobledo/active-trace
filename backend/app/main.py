@@ -18,6 +18,7 @@ from app.api.v1.routers.auth import router as auth_router
 from app.api.v1.routers.equipos import router as equipos_router
 from app.api.v1.routers.health import router as health_router
 from app.api.v1.routers.impersonation import router as impersonation_router
+from app.api.v1.routers.padron import router as padron_router
 from app.api.v1.routers.usuarios import router as usuarios_router
 from app.core.config import Settings
 from app.core.database import close_engine, init_engine
@@ -63,6 +64,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(usuarios_router)
     app.include_router(equipos_router)
     app.include_router(asignaciones_router)
+    app.include_router(padron_router)
 
     return app
 

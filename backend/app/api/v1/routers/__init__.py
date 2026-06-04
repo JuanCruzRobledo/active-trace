@@ -6,6 +6,7 @@ from app.api.v1.routers.auth import router as auth_router
 from app.api.v1.routers.equipos import router as equipos_router
 from app.api.v1.routers.health import router as health_router
 from app.api.v1.routers.impersonation import router as impersonation_router
+from app.api.v1.routers.padron import router as padron_router
 from app.api.v1.routers.usuarios import router as usuarios_router
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "equipos_router",
     "health_router",
     "impersonation_router",
+    "padron_router",
     "usuarios_router",
 ]

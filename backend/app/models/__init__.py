@@ -21,6 +21,8 @@ from app.models.two_factor_challenge import TwoFactorChallenge
 from app.models.user import User
 from app.models.usuario import Usuario
 from app.models.asignacion import Asignacion
+from app.models.version_padron import VersionPadron
+from app.models.entrada_padron import EntradaPadron
 
 __all__ = [
     "Asignacion",
@@ -28,7 +30,9 @@ __all__ = [
     "BaseMixin",
     "Carrera",
     "Cohorte",
+    "EntradaPadron",
     "Materia",
+    "VersionPadron",
     "PasswordResetToken",
     "Permiso",
     "RefreshToken",

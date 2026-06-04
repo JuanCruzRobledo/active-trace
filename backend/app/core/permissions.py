@@ -34,6 +34,9 @@ PERM_EQUIPOS_ASIGNAR = "equipos:asignar"
 # ===== Academic Structure =====
 PERM_ESTRUCTURA_GESTIONAR = "estructura:gestionar"
 
+# ===== Padron =====
+PERM_PADRON_IMPORTAR = "padron:importar"
+
 # ===== Users =====
 PERM_USUARIOS_GESTIONAR = "usuarios:gestionar"
 
@@ -68,6 +71,7 @@ PERMISOS_CATALOGO = [
     {"codigo": PERM_AVISOS_PUBLICAR, "descripcion": "Publicar avisos"},
     {"codigo": PERM_EQUIPOS_ASIGNAR, "descripcion": "Gestionar equipos docentes"},
     {"codigo": PERM_ESTRUCTURA_GESTIONAR, "descripcion": "Gestionar estructura académica"},
+    {"codigo": PERM_PADRON_IMPORTAR, "descripcion": "Importar padron de alumnos"},
     {"codigo": PERM_USUARIOS_GESTIONAR, "descripcion": "Gestionar usuarios del tenant"},
     {"codigo": PERM_AUDITORIA_VER, "descripcion": "Ver auditoría"},
     {"codigo": PERM_IMPERSONACION_USAR, "descripcion": "Usar impersonación"},
