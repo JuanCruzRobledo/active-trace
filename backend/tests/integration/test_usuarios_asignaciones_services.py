@@ -382,3 +382,308 @@ class TestAsignacionService:
 
         todas = await svc.listar_por_usuario(usuario.id)
         assert len(todas) == 2
+
+
+# ===========================================================================
+# EquipoService Tests (C-08)
+# ===========================================================================
+
+
+class TestEquipoService:
+    """Tests for EquipoService."""
+
+    async def _seed_usuario(self, db_session, tenant, email="base@test.com"):
+        from app.models.usuario import Usuario
+
+        u = Usuario(
+            tenant_id=tenant.id, nombre="Base", apellidos="User",
+            email=email, dni="00000000",
+        )
+        db_session.add(u)
+        await db_session.flush()
+        return u
+
+    async def _seed_materia(self, db_session, tenant, codigo=None):
+        from app.models.materia import Materia
+
+        if codigo is None:
+            codigo = f"MAT-{uuid.uuid4().hex[:8].upper()}"
+        m = Materia(
+            tenant_id=tenant.id, codigo=codigo,
+            nombre="Materia Test",
+        )
+        db_session.add(m)
+        await db_session.flush()
+        return m
+
+    async def _seed_carrera(self, db_session, tenant, codigo=None):
+        from app.models.carrera import Carrera
+
+        if codigo is None:
+            codigo = f"CAR-{uuid.uuid4().hex[:8].upper()}"
+        c = Carrera(
+            tenant_id=tenant.id, codigo=codigo,
+            nombre="Carrera Test",
+        )
+        db_session.add(c)
+        await db_session.flush()
+        return c
+
+    async def _seed_cohorte(self, db_session, tenant, carrera):
+        from app.models.cohorte import Cohorte
+        from datetime import date
+
+        c = Cohorte(
+            tenant_id=tenant.id, carrera_id=carrera.id,
+            nombre=f"2024-{uuid.uuid4().hex[:6]}", anio=2024,
+            vig_desde=date(2024, 1, 1),
+        )
+        db_session.add(c)
+        await db_session.flush()
+        return c
+
+    async def _seed_asignacion(self, db_session, tenant, usuario=None, **kw):
+        from app.models.asignacion import Asignacion
+
+        if usuario is None:
+            usuario = await self._seed_usuario(
+                db_session, tenant, kw.pop("email", "asig@test.com")
+            )
+        a = Asignacion(
+            tenant_id=tenant.id,
+            usuario_id=usuario.id,
+            rol=kw.pop("rol", "PROFESOR"),
+            desde=kw.pop("desde", datetime(2024, 1, 1, tzinfo=timezone.utc)),
+            **kw,
+        )
+        db_session.add(a)
+        await db_session.flush()
+        return a
+
+    async def _build_svc(self, db_session: AsyncSession, tenant: Tenant):
+        from app.services.equipo_service import EquipoService
+
+        return EquipoService(
+            session=db_session, tenant_id=tenant.id,
+            actor_id=uuid.uuid4(),
+        )
+
+    async def test_mis_equipos_returns_user_assignments(
+        self, db_session: AsyncSession, tenant: Tenant
+    ) -> None:
+        """mis_equipos retorna solo asignaciones del usuario."""
+        svc = await self._build_svc(db_session, tenant)
+        u1 = await self._seed_usuario(db_session, tenant, "u1@test.com")
+        u2 = await self._seed_usuario(db_session, tenant, "u2@test.com")
+
+        await self._seed_asignacion(db_session, tenant, usuario=u1)
+        await self._seed_asignacion(db_session, tenant, usuario=u2)
+
+        result = await svc.mis_equipos(usuario_id=u1.id, filtros={})
+        assert len(result) == 1
+        assert result[0]["usuario_id"] == str(u1.id)
+
+    async def test_asignacion_masiva_creates_all(
+        self, db_session: AsyncSession, tenant: Tenant
+    ) -> None:
+        """asignacion_masiva crea una asignacion por cada usuario."""
+        from app.schemas.equipo import AsignacionMasivaRequest
+
+        materia = await self._seed_materia(db_session, tenant)
+        carrera = await self._seed_carrera(db_session, tenant)
+        cohorte = await self._seed_cohorte(db_session, tenant, carrera)
+        u1 = await self._seed_usuario(db_session, tenant, "m1@test.com")
+        u2 = await self._seed_usuario(db_session, tenant, "m2@test.com")
+        svc = await self._build_svc(db_session, tenant)
+
+        data = AsignacionMasivaRequest(
+            usuario_ids=[u1.id, u2.id],
+            materia_id=str(materia.id),
+            carrera_id=str(carrera.id),
+            cohorte_id=str(cohorte.id),
+            rol="PROFESOR",
+            desde=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        )
+        result = await svc.asignacion_masiva(data)
+        assert len(result) == 2
+
+    async def test_asignacion_masiva_usuario_inexistente(
+        self, db_session: AsyncSession, tenant: Tenant
+    ) -> None:
+        """asignacion_masiva con usuario inexistente → BusinessError."""
+        from app.schemas.equipo import AsignacionMasivaRequest
+        from app.core.exceptions import BusinessError
+
+        materia = await self._seed_materia(db_session, tenant)
+        carrera = await self._seed_carrera(db_session, tenant)
+        cohorte = await self._seed_cohorte(db_session, tenant, carrera)
+        svc = await self._build_svc(db_session, tenant)
+        data = AsignacionMasivaRequest(
+            usuario_ids=[uuid.uuid4()],
+            materia_id=str(materia.id),
+            carrera_id=str(carrera.id),
+            cohorte_id=str(cohorte.id),
+            rol="PROFESOR",
+            desde=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        )
+        with pytest.raises(BusinessError) as exc:
+            await svc.asignacion_masiva(data)
+        assert "usuario" in str(exc.value.message).lower()
+
+    async def test_clonar_equipo_creates_copies(
+        self, db_session: AsyncSession, tenant: Tenant
+    ) -> None:
+        """clonar_equipo duplica asignaciones vigentes de origen a destino."""
+        from app.schemas.equipo import ClonarEquipoRequest
+
+        origen_materia = await self._seed_materia(db_session, tenant)
+        origen_carrera = await self._seed_carrera(db_session, tenant)
+        origen_cohorte = await self._seed_cohorte(db_session, tenant, origen_carrera)
+        destino_materia = await self._seed_materia(db_session, tenant)
+        destino_carrera = await self._seed_carrera(db_session, tenant)
+        destino_cohorte = await self._seed_cohorte(db_session, tenant, destino_carrera)
+
+        u = await self._seed_usuario(db_session, tenant, "clone@test.com")
+        await self._seed_asignacion(
+            db_session, tenant, usuario=u,
+            materia_id=origen_materia.id, carrera_id=origen_carrera.id,
+            cohorte_id=origen_cohorte.id,
+        )
+        await self._seed_asignacion(
+            db_session, tenant, usuario=u,
+            materia_id=origen_materia.id, carrera_id=origen_carrera.id,
+            cohorte_id=origen_cohorte.id, rol="TUTOR",
+        )
+
+        svc = await self._build_svc(db_session, tenant)
+        data = ClonarEquipoRequest(
+            origen_materia_id=str(origen_materia.id),
+            origen_carrera_id=str(origen_carrera.id),
+            origen_cohorte_id=str(origen_cohorte.id),
+            destino_materia_id=str(destino_materia.id),
+            destino_carrera_id=str(destino_carrera.id),
+            destino_cohorte_id=str(destino_cohorte.id),
+            destino_desde=datetime(2024, 3, 1, tzinfo=timezone.utc),
+        )
+        result = await svc.clonar_equipo(data)
+        assert result.creadas == 2
+        assert result.origen == f"{origen_materia.id}/{origen_carrera.id}/{origen_cohorte.id}"
+        assert result.destino == (
+            f"{destino_materia.id}/{destino_carrera.id}/{destino_cohorte.id}"
+        )
+        assert len(result.asignaciones) == 2
+
+    async def test_clonar_equipo_origen_vacio(
+        self, db_session: AsyncSession, tenant: Tenant
+    ) -> None:
+        """clonar_equipo con origen sin asignaciones → BusinessError."""
+        from app.schemas.equipo import ClonarEquipoRequest
+        from app.core.exceptions import BusinessError
+
+        materia = await self._seed_materia(db_session, tenant)
+        carrera = await self._seed_carrera(db_session, tenant)
+        cohorte = await self._seed_cohorte(db_session, tenant, carrera)
+        svc = await self._build_svc(db_session, tenant)
+        data = ClonarEquipoRequest(
+            origen_materia_id=str(materia.id),
+            origen_carrera_id=str(carrera.id),
+            origen_cohorte_id=str(cohorte.id),
+            destino_materia_id=str(uuid.uuid4()),
+            destino_carrera_id=str(uuid.uuid4()),
+            destino_cohorte_id=str(uuid.uuid4()),
+            destino_desde=datetime(2024, 3, 1, tzinfo=timezone.utc),
+        )
+        with pytest.raises(BusinessError) as exc:
+            await svc.clonar_equipo(data)
+        assert "origen" in str(exc.value.message).lower()
+
+    async def test_modificar_vigencia_updates_all(
+        self, db_session: AsyncSession, tenant: Tenant
+    ) -> None:
+        """modificar_vigencia actualiza desde/hasta en todas las del equipo."""
+        from app.schemas.equipo import VigenciaRequest
+
+        materia = await self._seed_materia(db_session, tenant)
+        carrera = await self._seed_carrera(db_session, tenant)
+        cohorte = await self._seed_cohorte(db_session, tenant, carrera)
+
+        u = await self._seed_usuario(db_session, tenant, "vig@test.com")
+        for i in range(3):
+            await self._seed_asignacion(
+                db_session, tenant, usuario=u,
+                materia_id=materia.id, carrera_id=carrera.id,
+                cohorte_id=cohorte.id,
+            )
+
+        svc = await self._build_svc(db_session, tenant)
+        data = VigenciaRequest(
+            materia_id=str(materia.id),
+            carrera_id=str(carrera.id),
+            cohorte_id=str(cohorte.id),
+            desde=datetime(2024, 3, 1, tzinfo=timezone.utc),
+            hasta=datetime(2024, 12, 31, tzinfo=timezone.utc),
+        )
+        result = await svc.modificar_vigencia(data)
+        assert result.afectadas == 3
+        assert result.desde == data.desde
+        assert result.hasta == data.hasta
+
+    async def test_modificar_vigencia_sin_asignaciones(
+        self, db_session: AsyncSession, tenant: Tenant
+    ) -> None:
+        """modificar_vigencia con equipo vacio retorna 0 afectadas."""
+        from app.schemas.equipo import VigenciaRequest
+
+        materia = await self._seed_materia(db_session, tenant)
+        carrera = await self._seed_carrera(db_session, tenant)
+        cohorte = await self._seed_cohorte(db_session, tenant, carrera)
+        svc = await self._build_svc(db_session, tenant)
+        data = VigenciaRequest(
+            materia_id=str(materia.id),
+            carrera_id=str(carrera.id),
+            cohorte_id=str(cohorte.id),
+            desde=datetime(2024, 3, 1, tzinfo=timezone.utc),
+        )
+        result = await svc.modificar_vigencia(data)
+        assert result.afectadas == 0
+
+    async def test_exportar_equipo_returns_data(
+        self, db_session: AsyncSession, tenant: Tenant
+    ) -> None:
+        """exportar_equipo retorna datos estructurados para CSV."""
+        materia = await self._seed_materia(db_session, tenant)
+        carrera = await self._seed_carrera(db_session, tenant)
+        cohorte = await self._seed_cohorte(db_session, tenant, carrera)
+
+        u = await self._seed_usuario(db_session, tenant, "exp@test.com")
+        await self._seed_asignacion(
+            db_session, tenant, usuario=u,
+            materia_id=materia.id, carrera_id=carrera.id,
+            cohorte_id=cohorte.id,
+        )
+
+        svc = await self._build_svc(db_session, tenant)
+        result = await svc.exportar_equipo(
+            materia_id=materia.id,
+            carrera_id=carrera.id,
+            cohorte_id=cohorte.id,
+        )
+        assert len(result) == 1
+        assert result[0]["docente"] == "Base User"
+        assert result[0]["documento"] == "00000000"
+        assert result[0]["rol"] == "PROFESOR"
+
+    async def test_exportar_equipo_vacio(
+        self, db_session: AsyncSession, tenant: Tenant
+    ) -> None:
+        """exportar_equipo con equipo vacio retorna lista vacia."""
+        materia = await self._seed_materia(db_session, tenant)
+        carrera = await self._seed_carrera(db_session, tenant)
+        cohorte = await self._seed_cohorte(db_session, tenant, carrera)
+        svc = await self._build_svc(db_session, tenant)
+        result = await svc.exportar_equipo(
+            materia_id=materia.id,
+            carrera_id=carrera.id,
+            cohorte_id=cohorte.id,
+        )
+        assert len(result) == 0
