@@ -14,6 +14,7 @@ from fastapi import FastAPI
 
 from app.api.v1.routers.admin_estructura import router as admin_estructura_router
 from app.api.v1.routers.asignaciones import router as asignaciones_router
+from app.api.v1.routers.analisis import router as analisis_router
 from app.api.v1.routers.auth import router as auth_router
 from app.api.v1.routers.calificaciones import router as calificaciones_router
 from app.api.v1.routers.equipos import router as equipos_router
@@ -67,6 +68,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(asignaciones_router)
     app.include_router(padron_router)
     app.include_router(calificaciones_router)
+    app.include_router(analisis_router)
 
     return app
 

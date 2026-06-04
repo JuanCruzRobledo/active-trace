@@ -166,7 +166,7 @@ def require_permission(permiso: str):
     async def _check_permission(
         current_user: UserContext = Depends(get_current_user),
         db: AsyncSession = Depends(get_db),
-    ) -> bool:
+    ) -> UserContext:
         from app.services.permission_service import PermissionService  # noqa: PLC0415
 
         service = PermissionService(db, current_user.tenant_id)
@@ -178,5 +178,5 @@ def require_permission(permiso: str):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Permission denied",
             )
-        return True
+        return current_user
     return _check_permission

@@ -80,6 +80,22 @@
       "sessions": 2,
       "memories": 9,
       "prompts": 6
+    },
+    {
+      "id": "1f7ed640",
+      "created_by": "rafan",
+      "created_at": "2026-06-04T18:11:42Z",
+      "sessions": 2,
+      "memories": 3,
+      "prompts": 10
+    },
+    {
+      "id": "44060b59",
+      "created_by": "rafan",
+      "created_at": "2026-06-04T19:19:51Z",
+      "sessions": 2,
+      "memories": 2,
+      "prompts": 19
     }
   ]
 }

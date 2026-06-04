@@ -12,6 +12,17 @@ import os
 from collections.abc import AsyncGenerator
 from uuid import UUID
 
+
+# ── Env defaults for tests ───────────────────────────────────────────
+# Settings() en dependencies.py y fixtures crean Settings() sin args,
+# que busca .env en CWD. Como pytest corre desde backend/ (o raíz) y
+# el .env puede no estar en CWD, seteamos defaults aquí para evitar
+# ValidationError en get_current_user y fixtures que usan Settings().
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://trace:trace@localhost:5432/trace")
+os.environ.setdefault("SECRET_KEY", "a" * 64)
+os.environ.setdefault("ENCRYPTION_KEY", "b" * 32)
+os.environ.setdefault("ENVIRONMENT", "development")
+
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
