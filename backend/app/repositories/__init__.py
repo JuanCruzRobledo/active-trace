@@ -9,10 +9,13 @@ from app.repositories.password_reset_token_repository import PasswordResetTokenR
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.two_factor_challenge_repository import TwoFactorChallengeRepository
 from app.repositories.user_repository import UserRepository
+from app.repositories.calificacion_repository import CalificacionRepository
+from app.repositories.umbral_materia_repository import UmbralMateriaRepository
 from app.repositories.version_padron_repository import VersionPadronRepository
 
 __all__ = [
     "BaseRepository",
+    "CalificacionRepository",
     "CarreraRepository",
     "CohorteRepository",
     "EntradaPadronRepository",
@@ -21,5 +24,6 @@ __all__ = [
     "PasswordResetTokenRepository",
     "RefreshTokenRepository",
     "TwoFactorChallengeRepository",
+    "UmbralMateriaRepository",
     "UserRepository",
 ]

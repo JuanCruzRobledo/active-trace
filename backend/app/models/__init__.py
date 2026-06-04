@@ -7,6 +7,7 @@ Importar este paquete fuerza la registración de todas las tablas en
 
 from app.models.audit_log import AuditLog
 from app.models.base import BaseMixin
+from app.models.calificacion import Calificacion
 from app.models.carrera import Carrera
 from app.models.cohorte import Cohorte
 from app.models.materia import Materia
@@ -16,6 +17,7 @@ from app.models.refresh_token import RefreshToken
 from app.models.rol import Rol
 from app.models.rol_permiso import RolPermiso
 from app.models.tenant import Tenant
+from app.models.umbral_materia import UmbralMateria
 from app.models.user_rol import UserRol
 from app.models.two_factor_challenge import TwoFactorChallenge
 from app.models.user import User
@@ -28,6 +30,7 @@ __all__ = [
     "Asignacion",
     "AuditLog",
     "BaseMixin",
+    "Calificacion",
     "Carrera",
     "Cohorte",
     "EntradaPadron",
@@ -40,6 +43,7 @@ __all__ = [
     "RolPermiso",
     "Tenant",
     "Usuario",
+    "UmbralMateria",
     "UserRol",
     "TwoFactorChallenge",
     "User",

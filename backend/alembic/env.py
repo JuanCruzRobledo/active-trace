@@ -37,6 +37,8 @@ from app.models.user import User  # noqa: E402, F401
 from app.models.user_rol import UserRol  # noqa: E402, F401
 from app.models.usuario import Usuario  # noqa: E402, F401
 from app.models.asignacion import Asignacion  # noqa: E402, F401
+from app.models.calificacion import Calificacion  # noqa: E402, F401
+from app.models.umbral_materia import UmbralMateria  # noqa: E402, F401
 
 # Metadata de los modelos para autogenerate
 target_metadata = Base.metadata

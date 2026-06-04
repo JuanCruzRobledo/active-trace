@@ -81,7 +81,7 @@ GATE 6: C-07 ✓                                     ← FORK ANCHO (usuarios + 
   → C-20 perfil-y-mensajeria-interna               [Agente C]
 
 GATE 7: C-09 ✓
-  → C-10 calificaciones-y-umbral                   [Agente B]
+  → C-10 calificaciones-y-umbral                   [Agente B] ✓
 
 GATE 8: C-10 ✓
   → C-11 analisis-atrasados-reportes               [Agente B]
@@ -100,7 +100,7 @@ GATE 10: C-21 ✓ + backend de cada dominio ✓       ← capa de presentación
 La cadena lineal más corta para tener el flujo de mayor valor (importar → analizar → comunicar) operando en producción multi-tenant:
 
 ```
-C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 → C-12*
+C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 ✓ → C-11 → C-12*
 ```
 
 `C-12*` (comunicaciones-cola-worker) es el último change indispensable del flujo central. El frontend mínimo (`C-21` + `C-22*`) corre en paralelo sobre la rama del Agente C y converge en GATE 10.
@@ -116,7 +116,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
 | 5 | C-06 estructura-academica | C-05 audit-log | C-21 frontend-shell-y-auth |
 | 6 | C-07 usuarios-y-asignaciones | C-17 programas-y-fechas | C-15 avisos-y-acknowledgment |
 | 7 | C-08 equipos-docentes | C-09 padron-ingesta-moodle | C-20 perfil-y-mensajeria |
-| 8 | C-13 encuentros-y-guardias | C-10 calificaciones-y-umbral | C-16 tareas-internas |
+| 8 | C-13 encuentros-y-guardias | C-10 calificaciones-y-umbral ✓ | C-16 tareas-internas |
 | 9 | C-14 evaluaciones-y-coloquios | C-11 analisis-atrasados-reportes | C-18 liquidaciones-y-honorarios |
 | 10 | C-19 panel-auditoria-metricas | C-12 comunicaciones-cola-worker | C-22 frontend-academico-docente |
 | 11 | — | C-23 frontend-coordinacion | C-24 frontend-finanzas-y-admin |
@@ -306,7 +306,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `knowledge-base/08_arquitectura_propuesta.md` §5.1 (Moodle WS, fallback manual)
 
 ### [C-10] `calificaciones-y-umbral`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 68 tests passing, archived 2026-06-04
 - **Scope**:
   - Modelos `Calificacion` (numérica/textual, `aprobado` derivado, origen Importado/Manual) y `UmbralMateria` (umbral_pct por asignación, valores aprobatorios).
   - Importar calificaciones desde archivo del LMS (F1.1): detecta columnas de actividades numéricas (RN-01) y textuales (RN-02), vista previa, selección de actividades.
@@ -527,7 +527,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
 |---------|-------|
 | Total de changes | 24 |
 | Fases | 6 (FASE 0 a FASE 5) |
-| Camino crítico | 10 changes (`C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 → C-12`) |
+| Camino crítico | ~~10~~ 9 changes restantes (C-11 es el próximo) |
 | Gates de paralelismo | 11 (GATE 0 a GATE 10) |
 | Changes CRITICO (governance) | 6 (C-02, C-03, C-04, C-05, C-07, C-18) |
 | Primer fork | GATE 4 (tras C-04, seguridad lista) |
