@@ -218,7 +218,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 ✓ → C-11
 ## FASE 2 — Entidades Raíz del Dominio Académico
 
 ### [C-06] `estructura-academica`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — archived 2026-06-03
 - **Scope**:
   - Modelos: `Carrera`, `Cohorte`, `Materia` (catálogo único por tenant — ADR-006).
   - ABM `/api/admin/carreras`, `/api/admin/cohortes`, `/api/admin/materias` con guard `estructura:gestionar` (ADMIN).
@@ -237,7 +237,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 ✓ → C-11
 ## FASE 3 — Identidad, Asignaciones y Estructura Documental
 
 ### [C-07] `usuarios-y-asignaciones`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — archived 2026-06-03
 - **Scope**:
   - Modelo `Usuario` con PII **cifrada** (`email`, `dni`, `cuil`, `cbu`, `alias_cbu`); legajo como atributo de negocio opcional (no PK, no credencial).
   - Modelo `Asignacion` (Usuario ↔ Rol ↔ contexto: materia/carrera/cohorte/comisiones), `responsable_id` (jerarquía), vigencia `desde/hasta`, `estado_vigencia` derivado.
@@ -322,7 +322,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 ✓ → C-11
   - `knowledge-base/07_flujos_principales.md` FL-02 (pasos 3–5)
 
 ### [C-11] `analisis-atrasados-reportes`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 20 tests passing, archived 2026-06-04
 - **Scope**:
   - Cómputo de **alumnos atrasados** (actividades faltantes o nota < umbral, RN-06) (F2.2).
   - Ranking de actividades aprobadas (F2.3, RN-09); reportes rápidos por materia (F2.4); notas finales agrupadas (F2.5).
@@ -527,7 +527,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 ✓ → C-11
 |---------|-------|
 | Total de changes | 24 |
 | Fases | 6 (FASE 0 a FASE 5) |
-| Camino crítico | ~~10~~ 9 changes restantes (C-11 es el próximo) |
+| Camino crítico | ~~10~~ 8 changes restantes (C-12 es el próximo) |
 | Gates de paralelismo | 11 (GATE 0 a GATE 10) |
 | Changes CRITICO (governance) | 6 (C-02, C-03, C-04, C-05, C-07, C-18) |
 | Primer fork | GATE 4 (tras C-04, seguridad lista) |
