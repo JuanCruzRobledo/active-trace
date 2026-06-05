@@ -10,6 +10,7 @@ from app.models.base import BaseMixin
 from app.models.calificacion import Calificacion
 from app.models.carrera import Carrera
 from app.models.cohorte import Cohorte
+from app.models.comunicacion import Comunicacion, EstadoComunicacion
 from app.models.materia import Materia
 from app.models.password_reset_token import PasswordResetToken
 from app.models.permiso import Permiso
@@ -33,7 +34,9 @@ __all__ = [
     "Calificacion",
     "Carrera",
     "Cohorte",
+    "Comunicacion",
     "EntradaPadron",
+    "EstadoComunicacion",
     "Materia",
     "VersionPadron",
     "PasswordResetToken",

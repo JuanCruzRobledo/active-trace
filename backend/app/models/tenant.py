@@ -12,6 +12,7 @@ Reglas:
 """
 
 from sqlalchemy import Column, String
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.models.base import BaseMixin
 from app.core.database import Base
@@ -22,8 +23,10 @@ class Tenant(Base, BaseMixin):
 
     Attributes:
         nombre: Nombre legible de la institución.
+        config: Configuración JSONB del tenant (flags, preferencias, etc.).
     """
 
     __tablename__ = "tenant"
 
     nombre = Column(String(255), nullable=False)
+    config = Column(JSONB, nullable=False, server_default="{}", default=dict)
