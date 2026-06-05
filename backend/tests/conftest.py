@@ -139,8 +139,23 @@ async def db_engine(settings: Settings):
     # no existen y los tests explotan con "no such table".
     import app.models  # noqa: PLC0415, F401
 
-    # Crear todas las tablas de los modelos registrados en Base
+    # Crear PostgreSQL enum types antes de las tablas (create_type=False en modelos)
     from app.core.database import _engine  # type: ignore[attr-defined]  # noqa: PLC0415
+
+    from sqlalchemy import Enum as SAEnum  # noqa: PLC0415
+
+    enum_defs = [
+        SAEnum("Programado", "Realizado", "Cancelado", name="estado_encuentro"),
+        SAEnum("Pendiente", "Realizada", "Cancelada", name="estado_guardia"),
+        SAEnum(
+            "Lunes", "Martes", "Miércoles", "Jueves",
+            "Viernes", "Sábado", "Domingo",
+            name="dia_semana",
+        ),
+    ]
+    async with _engine.begin() as conn:
+        for enum_def in enum_defs:
+            await conn.run_sync(lambda sync_conn: enum_def.create(sync_conn, checkfirst=True))
 
     async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

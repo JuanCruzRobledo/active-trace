@@ -10,6 +10,8 @@ Crea (si no existen):
   • Estructura académica: carrera, materia, cohorte
   • Asignación del profesor a la materia + umbral
   • 3 alumnos (juan, maria, carlos) con calificaciones
+  • Slot recurrente + 4 instancias de encuentro
+  • 1 guardia de ejemplo
 
 Idempotente: se puede ejecutar N veces sin duplicar datos.
 
@@ -70,14 +72,27 @@ PERMISOS = [
     ("estructura:gestionar", "Gestionar carrera/materia/cohorte"),
     ("padron:importar", "Importar padrón de alumnos"),
     ("impersonacion:usar", "Usar funcionalidad de impersonación"),
+    ("encuentros:gestionar", "Gestionar encuentros sincrónicos (propios)"),
+    ("encuentros:ver-admin", "Ver todos los encuentros del tenant"),
+    ("guardias:registrar", "Registrar guardias (propias o de cualquier docente)"),
+    ("guardias:ver-admin", "Ver y exportar todas las guardias del tenant"),
 ]
 
 # QUÉ permisos tiene cada rol
 ROLE_PERMISOS: dict[str, list[str]] = {
     "ADMIN": [p[0] for p in PERMISOS],  # Todos
-    "COORDINADOR": ["atrasados:ver", "equipos:ver", "equipos:asignar"],
-    "PROFESOR": ["atrasados:ver", "equipos:ver"],
-    "TUTOR": ["atrasados:ver"],
+    "COORDINADOR": [
+        "atrasados:ver", "equipos:ver", "equipos:asignar",
+        "encuentros:gestionar", "encuentros:ver-admin",
+        "guardias:registrar", "guardias:ver-admin",
+    ],
+    "PROFESOR": [
+        "atrasados:ver", "equipos:ver",
+        "encuentros:gestionar", "guardias:registrar",
+    ],
+    "TUTOR": [
+        "atrasados:ver", "guardias:registrar",
+    ],
     "ALUMNO": [],
 }
 
@@ -657,6 +672,141 @@ async def ensure_calificaciones(
         print("  [~] Calificaciones ya existen")
 
 
+# ── Encuentros ────────────────────────────────────────────────────────────
+
+
+async def ensure_slot_recurrente(
+    session, materia_id: UUID, asignacion_id: UUID | None = None
+) -> UUID:
+    """Crea un slot recurrente de ejemplo si no existe."""
+    titulo = "Clase de Análisis Matemático I"
+    result = await session.execute(
+        text("SELECT id FROM slot_encuentro WHERE titulo = :tit AND materia_id = :mid AND tenant_id = :tid"),
+        {"tit": titulo, "mid": materia_id, "tid": DEV_TENANT_ID},
+    )
+    row = result.fetchone()
+    if row is not None:
+        print(f"  [~] Slot recurrente ya existe")
+        return row[0]
+
+    sid = uuid4()
+    from datetime import date, time
+
+    await session.execute(
+        text("""
+            INSERT INTO slot_encuentro
+                (id, tenant_id, asignacion_id, materia_id, titulo, hora,
+                 dia_semana, fecha_inicio, cant_semanas, meet_url,
+                 created_at, updated_at)
+            VALUES
+                (:id, :tid, :aid, :mid, :tit, :hora,
+                 :dia, :fecha_ini, :semanas, :meet,
+                 now(), now())
+        """),
+        {
+            "id": sid,
+            "tid": DEV_TENANT_ID,
+            "aid": asignacion_id,
+            "mid": materia_id,
+            "tit": titulo,
+            "hora": time(18, 0),
+            "dia": "Lunes",
+            "fecha_ini": date(2026, 6, 8),
+            "semanas": 4,
+            "meet": "https://meet.google.com/abc-defg-hij",
+        },
+    )
+    print(f"  [+] Slot recurrente '{titulo}' creado")
+    return sid
+
+
+async def ensure_instancias(session, slot_id: UUID, materia_id: UUID) -> None:
+    """Crea instancias de ejemplo para un slot si no existen."""
+    from datetime import date, timedelta
+
+    # Check if instances already exist for this slot
+    result = await session.execute(
+        text("SELECT COUNT(*) FROM instancia_encuentro WHERE slot_id = :sid AND tenant_id = :tid"),
+        {"sid": slot_id, "tid": DEV_TENANT_ID},
+    )
+    if result.scalar() > 0:
+        print(f"  [~] Instancias del slot ya existen")
+        return
+
+    base_fecha = date(2026, 6, 8)
+    created = 0
+    for i in range(4):
+        iid = uuid4()
+        await session.execute(
+            text("""
+                INSERT INTO instancia_encuentro
+                    (id, tenant_id, slot_id, materia_id, fecha, hora,
+                     titulo, estado, meet_url, created_at, updated_at)
+                VALUES
+                    (:id, :tid, :sid, :mid, :fecha, :hora,
+                     :tit, :est, :meet, now(), now())
+            """),
+            {
+                "id": iid,
+                "tid": DEV_TENANT_ID,
+                "sid": slot_id,
+                "mid": materia_id,
+                "fecha": base_fecha + timedelta(weeks=i),
+                "hora": "18:00",
+                "tit": "Clase de Análisis Matemático I",
+                "est": "Programado",
+                "meet": "https://meet.google.com/abc-defg-hij",
+            },
+        )
+        created += 1
+
+    print(f"  [+] {created} instancias de encuentro creadas")
+
+
+# ── Guardias ──────────────────────────────────────────────────────────────
+
+
+async def ensure_guardia(
+    session, materia_id: UUID, carrera_id: UUID, cohorte_id: UUID,
+    asignacion_id: UUID | None = None,
+) -> None:
+    """Crea una guardia de ejemplo si no existe."""
+    result = await session.execute(
+        text("""SELECT id FROM guardia
+                WHERE materia_id = :mid AND tenant_id = :tid
+                  AND horario = :hor AND deleted_at IS NULL"""),
+        {"mid": materia_id, "tid": DEV_TENANT_ID, "hor": "14:00–14:45"},
+    )
+    if result.fetchone() is not None:
+        print(f"  [~] Guardia de ejemplo ya existe")
+        return
+
+    gid = uuid4()
+    await session.execute(
+        text("""
+            INSERT INTO guardia
+                (id, tenant_id, asignacion_id, materia_id, carrera_id, cohorte_id,
+                 dia, horario, estado, comentarios, creada_at, created_at, updated_at)
+            VALUES
+                (:id, :tid, :aid, :mid, :cid, :coid,
+                 :dia, :hor, :est, :com, now(), now(), now())
+        """),
+        {
+            "id": gid,
+            "tid": DEV_TENANT_ID,
+            "aid": asignacion_id,
+            "mid": materia_id,
+            "cid": carrera_id,
+            "coid": cohorte_id,
+            "dia": "Martes",
+            "hor": "14:00–14:45",
+            "est": "Pendiente",
+            "com": "Consulta general - Atención a alumnos",
+        },
+    )
+    print(f"  [+] Guardia de ejemplo creada")
+
+
 # ── Main ────────────────────────────────────────────────────────────────
 
 
@@ -781,6 +931,21 @@ async def main() -> None:
         print()
         await ensure_calificaciones(session, materia_id, entradas)
 
+        # ── 10. Encuentros ───────────────────────────────────────────
+        print()
+        slot_id = await ensure_slot_recurrente(
+            session, materia_id,
+            asignacion_id=asignacion_id if prof_row else None,
+        )
+        await ensure_instancias(session, slot_id, materia_id)
+
+        # ── 11. Guardias ─────────────────────────────────────────────
+        print()
+        await ensure_guardia(
+            session, materia_id, carrera_id, cohorte_id,
+            asignacion_id=asignacion_id if prof_row else None,
+        )
+
         # ── Commit ───────────────────────────────────────────────────
         await session.commit()
 
@@ -793,6 +958,8 @@ async def main() -> None:
     print(f"  • 1 carrera, 1 materia, 1 cohorte")
     print(f"  • {len(entradas)} entradas de padrón")
     print(f"  • Calificaciones de prueba")
+    print(f"  • Slot recurrente + 4 instancias de encuentro")
+    print(f"  • 1 guardia de ejemplo")
     print()
     print("Usuarios disponibles:")
     print("  admin@trace.dev / Admin123456!  (ADMIN + PROFESOR)")

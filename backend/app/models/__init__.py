@@ -11,6 +11,7 @@ from app.models.calificacion import Calificacion
 from app.models.carrera import Carrera
 from app.models.cohorte import Cohorte
 from app.models.comunicacion import Comunicacion, EstadoComunicacion
+from app.models.enums import DiaSemana, EstadoEncuentro, EstadoGuardia
 from app.models.materia import Materia
 from app.models.password_reset_token import PasswordResetToken
 from app.models.permiso import Permiso
@@ -26,6 +27,9 @@ from app.models.usuario import Usuario
 from app.models.asignacion import Asignacion
 from app.models.version_padron import VersionPadron
 from app.models.entrada_padron import EntradaPadron
+from app.models.slot_encuentro import SlotEncuentro
+from app.models.instancia_encuentro import InstanciaEncuentro
+from app.models.guardia import Guardia
 
 __all__ = [
     "Asignacion",
@@ -37,7 +41,13 @@ __all__ = [
     "Comunicacion",
     "EntradaPadron",
     "EstadoComunicacion",
+    "EstadoEncuentro",
+    "EstadoGuardia",
+    "DiaSemana",
+    "Guardia",
+    "InstanciaEncuentro",
     "Materia",
+    "SlotEncuentro",
     "VersionPadron",
     "PasswordResetToken",
     "Permiso",
