@@ -112,6 +112,14 @@
       "sessions": 2,
       "memories": 3,
       "prompts": 10
+    },
+    {
+      "id": "63775302",
+      "created_by": "Nicolas",
+      "created_at": "2026-06-05T16:12:03Z",
+      "sessions": 1,
+      "memories": 3,
+      "prompts": 3
     }
   ]
 }

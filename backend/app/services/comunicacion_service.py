@@ -13,12 +13,16 @@ import hashlib
 import json
 from uuid import UUID, uuid4
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.audit import record as audit_record
 from app.core.exceptions import BusinessError
+from app.models.asignacion import Asignacion
 from app.models.comunicacion import Comunicacion, EstadoComunicacion
+from app.models.entrada_padron import EntradaPadron
 from app.repositories.comunicacion_repository import ComunicacionRepository
+from app.schemas.comunicacion import CancelarResponse
 
 
 def hash_destinatarios(destinatarios: list[dict]) -> str:
@@ -82,6 +86,92 @@ class ComunicacionService:
         expected = self._generar_hash(asunto, cuerpo, destinatarios)
         return preview_token == expected
 
+    # ── Validación de alcance ────────────────────────────────────────
+
+    async def _validar_alcance_profesor(
+        self,
+        usuario_id: UUID,
+        materia_id: UUID,
+        destinatarios: list[dict],
+        roles: list[str],
+    ) -> None:
+        """Valida que un PROFESOR solo envíe a alumnos de sus comisiones.
+
+        Si ``Asignacion.comisiones`` es NULL, no hay restricción.
+        ADMIN y COORDINADOR no pasan por esta validación.
+        """
+        if "PROFESOR" not in roles or "ADMIN" in roles or "COORDINADOR" in roles:
+            return
+
+        stmt = select(Asignacion).where(
+            Asignacion.usuario_id == usuario_id,
+            Asignacion.materia_id == materia_id,
+            Asignacion.rol == "PROFESOR",
+            Asignacion.tenant_id == self.tenant_id,
+        )
+        asig = await self.session.scalar(stmt)
+
+        # Sin asignación o sin comisiones definidas → sin restricción
+        if asig is None or asig.comisiones is None:
+            return
+
+        comisiones_permitidas = set(asig.comisiones)
+
+        for dest in destinatarios:
+            tipo = dest["tipo"]
+            valor = dest["valor"]
+            comision = None
+
+            if tipo == "entrada_padron_id":
+                ep = await self.session.get(EntradaPadron, UUID(valor))
+                if ep is not None:
+                    comision = ep.comision
+            elif tipo == "email":
+                stmt_ep = select(EntradaPadron).where(
+                    EntradaPadron.email == valor,
+                    EntradaPadron.tenant_id == self.tenant_id,
+                )
+                ep = await self.session.scalar(stmt_ep)
+                if ep is not None:
+                    comision = ep.comision
+
+            if comision is None or comision not in comisiones_permitidas:
+                raise BusinessError(
+                    "No tiene permisos para enviar a este alumno "
+                    "(comisión no asignada)"
+                )
+
+    async def _validar_alcance_profesor_individual(
+        self,
+        usuario_id: UUID,
+        materia_id: UUID,
+        entrada_padron_id: UUID,
+        roles: list[str],
+    ) -> None:
+        """Valida alcance de PROFESOR para envío individual."""
+        if "PROFESOR" not in roles or "ADMIN" in roles or "COORDINADOR" in roles:
+            return
+
+        stmt = select(Asignacion).where(
+            Asignacion.usuario_id == usuario_id,
+            Asignacion.materia_id == materia_id,
+            Asignacion.rol == "PROFESOR",
+            Asignacion.tenant_id == self.tenant_id,
+        )
+        asig = await self.session.scalar(stmt)
+
+        if asig is None or asig.comisiones is None:
+            return
+
+        comisiones_permitidas = set(asig.comisiones)
+
+        ep = await self.session.get(EntradaPadron, entrada_padron_id)
+        if ep is None or ep.comision not in comisiones_permitidas:
+            raise BusinessError(
+                "No tiene permisos para enviar a este alumno "
+                "(comisión no asignada)"
+            )
+
     # ── Encolar ─────────────────────────────────────────────────────
 
     async def encolar_envio(
@@ -110,10 +200,14 @@ class ComunicacionService:
             requiere_aprobacion: Si el envío masivo requiere aprobación.
 
         Returns:
-            Dict con lote_id, estado_agregado, total_mensajes.
+            Dict con lote_id, estado, total_mensajes.
         """
         if not self.validar_preview(preview_token, asunto, cuerpo, destinatarios):
             raise BusinessError("El preview_token no coincide con el contenido actual")
+
+        await self._validar_alcance_profesor(
+            usuario_id, materia_id, destinatarios, roles
+        )
 
         necesita_aprobacion = requiere_aprobacion and len(destinatarios) > 1
 
@@ -147,7 +241,7 @@ class ComunicacionService:
 
         return {
             "lote_id": lote_id,
-            "estado_agregado": "Pendiente",
+            "estado": "Pendiente",
             "total_mensajes": len(creadas),
             "requiere_aprobacion": necesita_aprobacion,
         }
@@ -172,6 +266,10 @@ class ComunicacionService:
             [{"tipo": "entrada_padron_id", "valor": str(entrada_padron_id)}],
         ):
             raise BusinessError("El preview_token no coincide con el contenido actual")
+
+        await self._validar_alcance_profesor_individual(
+            usuario_id, materia_id, entrada_padron_id, roles
+        )
 
         lote_id = uuid4()
         destinatarios = [{"tipo": "entrada_padron_id", "valor": str(entrada_padron_id)}]
@@ -199,7 +297,7 @@ class ComunicacionService:
 
         return {
             "lote_id": lote_id,
-            "estado_agregado": "Pendiente",
+            "estado": "Pendiente",
             "total_mensajes": 1,
             "requiere_aprobacion": False,
         }
@@ -211,12 +309,21 @@ class ComunicacionService:
     ) -> dict:
         """Estado agregado de un lote."""
         result = await self.repo.listar_por_lote(tenant_id, lote_id)
-        if result["pendientes"] == 0 and result["enviados"] == 0:
-            estado = "Cancelado"
-        elif result["enviados"] > 0 and result["pendientes"] == 0:
-            estado = "Enviado"
-        else:
+        pendientes = result["pendientes"]
+        enviados = result["enviados"]
+        fallidos = result["fallidos"]
+        cancelados = result["cancelados"]
+
+        if pendientes > 0:
             estado = "Pendiente"
+        elif enviados > 0 and fallidos == 0 and cancelados == 0:
+            estado = "Enviado"
+        elif fallidos > 0 and enviados == 0 and cancelados == 0:
+            estado = "Error"
+        elif cancelados > 0 and enviados == 0 and fallidos == 0:
+            estado = "Cancelado"
+        else:
+            estado = "Mixto"
         result["estado"] = estado
         result["necesita_aprobacion"] = False
         return result
@@ -250,13 +357,15 @@ class ComunicacionService:
     # ── Cancelación ─────────────────────────────────────────────────
 
     async def cancelar_comunicacion(
-        self, lote_id: UUID, usuario_id: UUID
-    ) -> dict:
-        """Cancela comunicaciones Pendientes de un lote (solo del propio usuario)."""
-        ok = await self.repo.cancelar_lote(lote_id, usuario_id)
+        self, comunicacion_id: UUID, usuario_id: UUID
+    ) -> CancelarResponse:
+        """Cancela una comunicación Pendiente individual (solo del propio usuario)."""
+        ok = await self.repo.cancelar(comunicacion_id, usuario_id)
         if not ok:
             raise BusinessError("Comunicación no encontrada o no se puede cancelar")
-        return {"lote_id": lote_id, "estado": "Cancelado"}
+        return CancelarResponse(
+            comunicacion_id=comunicacion_id, estado="Cancelado"
+        )
 
     # ── Aprobación ──────────────────────────────────────────────────
 

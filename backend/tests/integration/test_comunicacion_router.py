@@ -216,6 +216,27 @@ class TestPreviewEndpoint:
         )
         assert resp.status_code == 422
 
+    async def test_preview_403_sin_permiso(
+        self, client: AsyncClient, seed_db: dict
+    ) -> None:
+        """ALUMNO (sin comunicacion:enviar) debe recibir 403."""
+        alumno_token = create_access_token(
+            user_id=uuid4(),
+            tenant_id=_DEV_TENANT_ID,
+            secret_key=_SECRET_KEY,
+            roles=["ALUMNO"],
+        )
+        resp = await client.post(
+            "/api/comunicaciones/preview",
+            json={
+                "asunto": "Test",
+                "cuerpo": "Cuerpo",
+                "destinatarios": [{"tipo": "email", "valor": "a@test.com"}],
+            },
+            headers={"Authorization": f"Bearer {alumno_token}"},
+        )
+        assert resp.status_code == 403
+
 
 # ── Test: POST /api/comunicaciones/enviar ──────────────────────────────
 
@@ -588,39 +609,31 @@ class TestCancelarEndpoint:
         client: AsyncClient,
         seed_db: dict,
         materia_id: UUID,
+        db_session: AsyncSession,
     ) -> None:
-        headers = {"Authorization": f"Bearer {seed_db['admin_token']}"}
+        from app.models.comunicacion import Comunicacion, EstadoComunicacion
 
-        preview_resp = await client.post(
-            "/api/comunicaciones/preview",
-            json={
-                "asunto": "Test",
-                "cuerpo": "Cuerpo",
-                "destinatarios": [{"tipo": "email", "valor": "a@test.com"}],
-            },
-            headers=headers,
+        c = Comunicacion(
+            tenant_id=_DEV_TENANT_ID,
+            enviado_por_id=seed_db["admin_id"],
+            materia_id=materia_id,
+            destinatario="a@test.com",
+            asunto="Test",
+            cuerpo="Cuerpo",
+            estado=EstadoComunicacion.Pendiente,
+            lote_id=uuid4(),
         )
-        pt = preview_resp.json()["preview_token"]
-
-        envio_resp = await client.post(
-            "/api/comunicaciones/enviar",
-            json={
-                "preview_token": pt,
-                "asunto": "Test",
-                "cuerpo": "Cuerpo",
-                "materia_id": str(materia_id),
-                "acepta_terminos": True,
-                "destinatarios": [{"tipo": "email", "valor": "a@test.com"}],
-            },
-            headers=headers,
-        )
-        lote_id = envio_resp.json()["lote_id"]
+        db_session.add(c)
+        await db_session.commit()
 
         resp = await client.post(
-            f"/api/comunicaciones/{lote_id}/cancelar",
-            headers=headers,
+            f"/api/comunicaciones/{c.id}/cancelar",
+            headers={"Authorization": f"Bearer {seed_db['admin_token']}"},
         )
         assert resp.status_code == 200
+        body = resp.json()
+        assert body["comunicacion_id"] == str(c.id)
+        assert body["estado"] == "Cancelado"
 
     async def test_cancelar_404(
         self,

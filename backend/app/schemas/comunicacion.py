@@ -121,7 +121,7 @@ class EnvioResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     lote_id: UUID
-    estado_agregado: str
+    estado: str
     total_mensajes: int
     requiere_aprobacion: bool = False
 

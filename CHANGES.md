@@ -86,8 +86,8 @@ GATE 7: C-09 ✓
 GATE 8: C-10 ✓
   → C-11 analisis-atrasados-reportes               [Agente B]
 
-GATE 9: C-11 ✓                                     ← flujo central del PROFESOR completo
-  → C-12 comunicaciones-cola-worker                [Agente B]
+GATE 9: C-11 ✓
+  → C-12 comunicaciones-cola-worker ✓              ← flujo central del PROFESOR completo
 
 GATE 10: C-21 ✓ + backend de cada dominio ✓       ← capa de presentación
   → C-22 frontend-academico-docente                [Agente C — si C-12 ✓]
@@ -100,7 +100,7 @@ GATE 10: C-21 ✓ + backend de cada dominio ✓       ← capa de presentación
 La cadena lineal más corta para tener el flujo de mayor valor (importar → analizar → comunicar) operando en producción multi-tenant:
 
 ```
-C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 ✓ → C-11 → C-12*
+C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 ✓ → C-11 ✓ → C-12 ✓
 ```
 
 `C-12*` (comunicaciones-cola-worker) es el último change indispensable del flujo central. El frontend mínimo (`C-21` + `C-22*`) corre en paralelo sobre la rama del Agente C y converge en GATE 10.
@@ -118,7 +118,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 ✓ → C-11
 | 7 | C-08 equipos-docentes | C-09 padron-ingesta-moodle | C-20 perfil-y-mensajeria |
 | 8 | C-13 encuentros-y-guardias | C-10 calificaciones-y-umbral ✓ | C-16 tareas-internas |
 | 9 | C-14 evaluaciones-y-coloquios | C-11 analisis-atrasados-reportes | C-18 liquidaciones-y-honorarios |
-| 10 | C-19 panel-auditoria-metricas | C-12 comunicaciones-cola-worker | C-22 frontend-academico-docente |
+| 10 | C-19 panel-auditoria-metricas | C-12 comunicaciones-cola-worker ✓ | C-22 frontend-academico-docente |
 | 11 | — | C-23 frontend-coordinacion | C-24 frontend-finanzas-y-admin |
 
 > Los 3 agentes convergen alrededor del paso 10-11. El Agente A queda libre antes y puede tomar `C-19` o adelantar refactors.
@@ -337,7 +337,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 ✓ → C-11
   - `knowledge-base/04_modelo_de_datos.md` §E7, §E8
 
 ### [C-12] `comunicaciones-cola-worker`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 37 tests passing, archived 2026-06-05
 - **Scope**:
   - Modelo `Comunicacion` (destinatario `[cifrado]`, lote_id, estado: Pendiente → Enviando → Enviado/Error/Cancelado, RN-15).
   - **Worker asíncrono** de despacho (`workers/`): consume cola, transiciona estados. Plantillas con variables de sustitución.

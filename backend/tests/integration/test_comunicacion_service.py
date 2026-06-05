@@ -130,7 +130,8 @@ async def _seed_alumno_en_padron(
 
 
 async def _seed_profesor_con_asignacion(
-    db_session: AsyncSession, tenant_id: uuid.UUID, materia_id: uuid.UUID
+    db_session: AsyncSession, tenant_id: uuid.UUID, materia_id: uuid.UUID,
+    comisiones: list[str] | None = None,
 ) -> uuid.UUID:
     """Crea un usuario PROFESOR asignado a una materia. Retorna usuario_id."""
     from app.models.usuario import Usuario
@@ -153,11 +154,75 @@ async def _seed_profesor_con_asignacion(
         usuario_id=uid,
         rol="PROFESOR",
         materia_id=materia_id,
+        comisiones=comisiones,
         desde=datetime.now(timezone.utc),
     )
     db_session.add(asig)
     await db_session.flush()
     return uid
+
+
+async def _seed_alumno_en_padron_con_comision(
+    db_session: AsyncSession, tenant_id: uuid.UUID, materia_id: uuid.UUID,
+    comision: str = "A",
+) -> uuid.UUID:
+    """Crea un alumno en el padrón con una comisión específica. Retorna entrada_padron_id."""
+    from app.models.usuario import Usuario
+    from app.models.version_padron import VersionPadron
+    from app.models.entrada_padron import EntradaPadron
+    from app.models.cohorte import Cohorte
+    from app.models.carrera import Carrera
+
+    carrera = Carrera(tenant_id=tenant_id, codigo=f"C-CSRV-{uuid.uuid4().hex[:4]}", nombre="Carrera Service")
+    db_session.add(carrera)
+    await db_session.flush()
+
+    cohorte = Cohorte(
+        tenant_id=tenant_id,
+        carrera_id=carrera.id,
+        nombre="2026-A",
+        anio=2026,
+        vig_desde=datetime(2026, 1, 1, tzinfo=timezone.utc).date(),
+        estado="Activa",
+    )
+    db_session.add(cohorte)
+    await db_session.flush()
+
+    uid = uuid.uuid4()
+    user = Usuario(
+        id=uid,
+        tenant_id=tenant_id,
+        email=f"alumno{uuid.uuid4().hex[:4]}@test.com",
+        nombre="Alumno",
+        apellidos="Test",
+        estado="Activo",
+    )
+    db_session.add(user)
+    await db_session.flush()
+
+    vp = VersionPadron(
+        tenant_id=tenant_id,
+        materia_id=materia_id,
+        cohorte_id=cohorte.id,
+        cargado_por=uid,
+        cargado_at=datetime.now(timezone.utc),
+        activa=True,
+    )
+    db_session.add(vp)
+    await db_session.flush()
+
+    ep = EntradaPadron(
+        tenant_id=tenant_id,
+        version_id=vp.id,
+        usuario_id=uid,
+        nombre="Alumno",
+        apellidos="Test",
+        email=f"alumno{uuid.uuid4().hex[:4]}@test.com",
+        comision=comision,
+    )
+    db_session.add(ep)
+    await db_session.flush()
+    return ep.id, uid
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────
@@ -293,7 +358,7 @@ class TestEncolarEnvio:
 
         assert "lote_id" in resultado
         assert resultado["total_mensajes"] == 2
-        assert resultado["estado_agregado"] == "Pendiente"
+        assert resultado["estado"] == "Pendiente"
 
     async def test_rechaza_preview_invalida(
         self,
@@ -378,7 +443,142 @@ class TestEncolarEnvio:
         await db_session.commit()
 
         assert resultado["requiere_aprobacion"] is True
-        assert resultado["estado_agregado"] == "Pendiente"
+        assert resultado["estado"] == "Pendiente"
+
+    async def test_profesor_con_comisiones_especificas_envia_a_comision_permitida(
+        self,
+        tenant: Tenant,
+        materia: uuid.UUID,
+        service: ComunicacionService,
+        db_session: AsyncSession,
+    ) -> None:
+        """PROFESOR con comisiones=['A'] puede enviar a alumno en comisión A por entrada_padron_id."""
+        profe_id = await _seed_profesor_con_asignacion(
+            db_session, tenant.id, materia, comisiones=["A"]
+        )
+        ep_id, _ = await _seed_alumno_en_padron_con_comision(
+            db_session, tenant.id, materia, comision="A"
+        )
+        await db_session.commit()
+
+        destinatarios = [{"tipo": "entrada_padron_id", "valor": str(ep_id)}]
+        token = service._generar_hash(
+            asunto="Test", cuerpo="Cuerpo", destinatarios=destinatarios
+        )
+
+        resultado = await service.encolar_envio(
+            usuario_id=profe_id,
+            tenant_id=tenant.id,
+            preview_token=token,
+            asunto="Test",
+            cuerpo="Cuerpo",
+            materia_id=materia,
+            destinatarios=destinatarios,
+            roles=["PROFESOR"],
+        )
+        await db_session.commit()
+        assert resultado["total_mensajes"] == 1
+
+    async def test_profesor_con_comisiones_restringidas_rechaza_alumno_de_otra_comision(
+        self,
+        tenant: Tenant,
+        materia: uuid.UUID,
+        service: ComunicacionService,
+        db_session: AsyncSession,
+    ) -> None:
+        """PROFESOR con comisiones=['A'] NO puede enviar a alumno en comisión B."""
+        from app.core.exceptions import BusinessError
+
+        profe_id = await _seed_profesor_con_asignacion(
+            db_session, tenant.id, materia, comisiones=["A"]
+        )
+        ep_id, _ = await _seed_alumno_en_padron_con_comision(
+            db_session, tenant.id, materia, comision="B"
+        )
+        await db_session.commit()
+
+        destinatarios = [{"tipo": "entrada_padron_id", "valor": str(ep_id)}]
+        token = service._generar_hash(
+            asunto="Test", cuerpo="Cuerpo", destinatarios=destinatarios
+        )
+
+        with pytest.raises(BusinessError, match="comisi.n no asignada"):
+            await service.encolar_envio(
+                usuario_id=profe_id,
+                tenant_id=tenant.id,
+                preview_token=token,
+                asunto="Test",
+                cuerpo="Cuerpo",
+                materia_id=materia,
+                destinatarios=destinatarios,
+                roles=["PROFESOR"],
+            )
+
+    async def test_profesor_sin_comisiones_puede_enviar_a_cualquier_alumno(
+        self,
+        tenant: Tenant,
+        materia: uuid.UUID,
+        service: ComunicacionService,
+        db_session: AsyncSession,
+    ) -> None:
+        """PROFESOR con comisiones=NULL puede enviar a cualquier alumno."""
+        profe_id = await _seed_profesor_con_asignacion(
+            db_session, tenant.id, materia, comisiones=None
+        )
+        ep_id, _ = await _seed_alumno_en_padron_con_comision(
+            db_session, tenant.id, materia, comision="Z"
+        )
+        await db_session.commit()
+
+        destinatarios = [{"tipo": "entrada_padron_id", "valor": str(ep_id)}]
+        token = service._generar_hash(
+            asunto="Test", cuerpo="Cuerpo", destinatarios=destinatarios
+        )
+
+        resultado = await service.encolar_envio(
+            usuario_id=profe_id,
+            tenant_id=tenant.id,
+            preview_token=token,
+            asunto="Test",
+            cuerpo="Cuerpo",
+            materia_id=materia,
+            destinatarios=destinatarios,
+            roles=["PROFESOR"],
+        )
+        await db_session.commit()
+        assert resultado["total_mensajes"] == 1
+
+    async def test_admin_evita_validacion_de_comisiones(
+        self,
+        tenant: Tenant,
+        materia: uuid.UUID,
+        service: ComunicacionService,
+        db_session: AsyncSession,
+    ) -> None:
+        """ADMIN puede enviar a cualquier alumno, sin importar comisiones."""
+        admin_id = await _seed_usuario(db_session, tenant.id)
+        ep_id, _ = await _seed_alumno_en_padron_con_comision(
+            db_session, tenant.id, materia, comision="B"
+        )
+        await db_session.commit()
+
+        destinatarios = [{"tipo": "entrada_padron_id", "valor": str(ep_id)}]
+        token = service._generar_hash(
+            asunto="Test", cuerpo="Cuerpo", destinatarios=destinatarios
+        )
+
+        resultado = await service.encolar_envio(
+            usuario_id=admin_id,
+            tenant_id=tenant.id,
+            preview_token=token,
+            asunto="Test",
+            cuerpo="Cuerpo",
+            materia_id=materia,
+            destinatarios=destinatarios,
+            roles=["ADMIN"],
+        )
+        await db_session.commit()
+        assert resultado["total_mensajes"] == 1
 
 
 class TestEncolarEnvioIndividual:
@@ -412,7 +612,78 @@ class TestEncolarEnvioIndividual:
         await db_session.commit()
 
         assert resultado["total_mensajes"] == 1
-        assert resultado["estado_agregado"] == "Pendiente"
+        assert resultado["estado"] == "Pendiente"
+
+    async def test_profesor_individual_envia_a_alumno_de_su_comision(
+        self,
+        tenant: Tenant,
+        materia: uuid.UUID,
+        service: ComunicacionService,
+        db_session: AsyncSession,
+    ) -> None:
+        """PROFESOR con comisiones=['A'] puede enviar individual a alumno en comisión A."""
+        profe_id = await _seed_profesor_con_asignacion(
+            db_session, tenant.id, materia, comisiones=["A"]
+        )
+        ep_id, _ = await _seed_alumno_en_padron_con_comision(
+            db_session, tenant.id, materia, comision="A"
+        )
+        await db_session.commit()
+
+        token = service._generar_hash(
+            asunto="Test",
+            cuerpo="Cuerpo",
+            destinatarios=[{"tipo": "entrada_padron_id", "valor": str(ep_id)}],
+        )
+
+        resultado = await service.encolar_envio_individual(
+            usuario_id=profe_id,
+            tenant_id=tenant.id,
+            preview_token=token,
+            asunto="Test",
+            cuerpo="Cuerpo",
+            materia_id=materia,
+            entrada_padron_id=ep_id,
+            roles=["PROFESOR"],
+        )
+        await db_session.commit()
+        assert resultado["total_mensajes"] == 1
+
+    async def test_profesor_individual_rechaza_alumno_de_otra_comision(
+        self,
+        tenant: Tenant,
+        materia: uuid.UUID,
+        service: ComunicacionService,
+        db_session: AsyncSession,
+    ) -> None:
+        """PROFESOR con comisiones=['A'] NO puede enviar individual a alumno en comisión B."""
+        from app.core.exceptions import BusinessError
+
+        profe_id = await _seed_profesor_con_asignacion(
+            db_session, tenant.id, materia, comisiones=["A"]
+        )
+        ep_id, _ = await _seed_alumno_en_padron_con_comision(
+            db_session, tenant.id, materia, comision="B"
+        )
+        await db_session.commit()
+
+        token = service._generar_hash(
+            asunto="Test",
+            cuerpo="Cuerpo",
+            destinatarios=[{"tipo": "entrada_padron_id", "valor": str(ep_id)}],
+        )
+
+        with pytest.raises(BusinessError, match="comisi.n no asignada"):
+            await service.encolar_envio_individual(
+                usuario_id=profe_id,
+                tenant_id=tenant.id,
+                preview_token=token,
+                asunto="Test",
+                cuerpo="Cuerpo",
+                materia_id=materia,
+                entrada_padron_id=ep_id,
+                roles=["PROFESOR"],
+            )
 
 
 class TestObtenerEstadoLote:
@@ -445,6 +716,97 @@ class TestObtenerEstadoLote:
         assert resultado["total"] == 2
         assert resultado["enviados"] == 1
         assert resultado["fallidos"] == 1
+        assert resultado["estado"] == "Mixto"
+
+    async def test_estado_error_cuando_todos_fallan(
+        self,
+        tenant: Tenant,
+        usuario: uuid.UUID,
+        materia: uuid.UUID,
+        service: ComunicacionService,
+        db_session: AsyncSession,
+    ) -> None:
+        """Todos Error → estado='Error'."""
+        lote_id = uuid.uuid4()
+        for _ in range(3):
+            c = Comunicacion(
+                tenant_id=tenant.id,
+                enviado_por_id=usuario,
+                materia_id=materia,
+                destinatario="a@test.com",
+                asunto="Test",
+                cuerpo="Cuerpo",
+                estado=EstadoComunicacion.Error,
+                lote_id=lote_id,
+            )
+            db_session.add(c)
+        await db_session.commit()
+
+        resultado = await service.obtener_estado_lote(tenant.id, lote_id)
+        assert resultado["estado"] == "Error"
+        assert resultado["total"] == 3
+        assert resultado["fallidos"] == 3
+
+    async def test_estado_mixto_con_varios_estados(
+        self,
+        tenant: Tenant,
+        usuario: uuid.UUID,
+        materia: uuid.UUID,
+        service: ComunicacionService,
+        db_session: AsyncSession,
+    ) -> None:
+        """Mezcla de estados → estado='Mixto'."""
+        lote_id = uuid.uuid4()
+        estados = [
+            EstadoComunicacion.Enviado,
+            EstadoComunicacion.Error,
+            EstadoComunicacion.Cancelado,
+        ]
+        for est in estados:
+            c = Comunicacion(
+                tenant_id=tenant.id,
+                enviado_por_id=usuario,
+                materia_id=materia,
+                destinatario="a@test.com",
+                asunto="Test",
+                cuerpo="Cuerpo",
+                estado=est,
+                lote_id=lote_id,
+            )
+            db_session.add(c)
+        await db_session.commit()
+
+        resultado = await service.obtener_estado_lote(tenant.id, lote_id)
+        assert resultado["estado"] == "Mixto"
+        assert resultado["total"] == 3
+
+    async def test_estado_cancelado_cuando_todos_cancelados(
+        self,
+        tenant: Tenant,
+        usuario: uuid.UUID,
+        materia: uuid.UUID,
+        service: ComunicacionService,
+        db_session: AsyncSession,
+    ) -> None:
+        """Todos Cancelado → estado='Cancelado'."""
+        lote_id = uuid.uuid4()
+        for _ in range(2):
+            c = Comunicacion(
+                tenant_id=tenant.id,
+                enviado_por_id=usuario,
+                materia_id=materia,
+                destinatario="a@test.com",
+                asunto="Test",
+                cuerpo="Cuerpo",
+                estado=EstadoComunicacion.Cancelado,
+                lote_id=lote_id,
+            )
+            db_session.add(c)
+        await db_session.commit()
+
+        resultado = await service.obtener_estado_lote(tenant.id, lote_id)
+        assert resultado["estado"] == "Cancelado"
+        assert resultado["total"] == 2
 
 
 class TestCancelarComunicacion:
@@ -469,8 +831,9 @@ class TestCancelarComunicacion:
         db_session.add(c)
         await db_session.commit()
 
-        resultado = await service.cancelar_comunicacion(c.lote_id, usuario)
-        assert resultado["estado"] == "Cancelado"
+        resultado = await service.cancelar_comunicacion(c.id, usuario)
+        assert resultado.estado == "Cancelado"
+        assert resultado.comunicacion_id == c.id
 
 
 class TestAprobarRechazarLote:

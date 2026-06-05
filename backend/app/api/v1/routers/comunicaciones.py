@@ -7,7 +7,7 @@ Endpoints:
 - ``GET /api/comunicaciones/mis-envios`` — listado personal.
 - ``GET /api/comunicaciones/{lote_id}`` — estado de un lote.
 - ``PUT /api/comunicaciones/{lote_id}/aprobar`` — aprobar/rechazar lote.
-- ``POST /api/comunicaciones/{lote_id}/cancelar`` — cancelar comunicacion.
+- ``POST /api/comunicaciones/{comunicacion_id}/cancelar`` — cancelar comunicacion individual.
 """
 
 from __future__ import annotations
@@ -19,7 +19,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import (
     UserContext,
-    get_current_user,
     get_db,
     require_permission,
 )
@@ -52,7 +51,7 @@ def _build_service(db: AsyncSession, tenant_id: UUID) -> ComunicacionService:
 async def crear_preview(
     body: PreviewRequest,
     db: AsyncSession = Depends(get_db),
-    ctx: UserContext = Depends(get_current_user),
+    ctx: UserContext = Depends(require_permission("comunicacion:enviar")),
 ) -> PreviewResponse:
     """Genera un preview del contenido y devuelve un token de validacion."""
     service = _build_service(db, ctx.tenant_id)
@@ -125,7 +124,7 @@ async def enviar_comunicacion_individual(
         )
         return EnvioIndividualResponse(
             comunicacion_id=result["lote_id"],
-            estado=result.get("estado_agregado", "Pendiente"),
+            estado=result.get("estado", "Pendiente"),
         )
     except BusinessError as exc:
         raise HTTPException(
@@ -194,17 +193,17 @@ async def aprobar_o_rechazar_lote(
         ) from exc
 
 
-@router.post("/{lote_id}/cancelar", response_model=dict)
+@router.post("/{comunicacion_id}/cancelar", response_model=CancelarResponse)
 async def cancelar_comunicacion(
-    lote_id: UUID,
+    comunicacion_id: UUID,
     db: AsyncSession = Depends(get_db),
     ctx: UserContext = Depends(require_permission("comunicacion:enviar")),
-) -> dict:
-    """Cancela una comunicacion pendiente."""
+) -> CancelarResponse:
+    """Cancela una comunicacion pendiente (individual)."""
     service = _build_service(db, ctx.tenant_id)
     try:
         result = await service.cancelar_comunicacion(
-            lote_id=lote_id, usuario_id=ctx.user_id
+            comunicacion_id=comunicacion_id, usuario_id=ctx.user_id
         )
         return result
     except BusinessError as exc:
