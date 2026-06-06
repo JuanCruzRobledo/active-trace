@@ -91,6 +91,7 @@ _VALID_CODES: frozenset[str] = frozenset(
         "COMUNICACION_ENVIAR",
         "ASIGNACION_MODIFICAR",
         "LIQUIDACION_CERRAR",
+        "FACTURA_ABONAR",
         "IMPERSONACION_INICIAR",
         "IMPERSONACION_FINALIZAR",
     }

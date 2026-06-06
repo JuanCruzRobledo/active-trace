@@ -7,6 +7,8 @@ from app.services.password_service import PasswordService
 from app.services.token_service import TokenService
 from app.services.totp_service import TOTPService
 from app.services.umbral_service import UmbralService
+from app.services.liquidacion_service import LiquidacionService
+from app.services.factura_service import FacturaService
 
 __all__ = [
     "AuthService",
@@ -16,4 +18,6 @@ __all__ = [
     "TokenService",
     "TOTPService",
     "UmbralService",
+    "LiquidacionService",
+    "FacturaService",
 ]

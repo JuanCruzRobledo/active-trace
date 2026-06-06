@@ -417,7 +417,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 ✓ → C-11
   - `knowledge-base/07_flujos_principales.md` FL-05 (workflow de tareas)
 
 ### [C-18] `liquidaciones-y-honorarios`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - Modelos `SalarioBase` (por rol, vigencia), `SalarioPlus` (grupo × rol, vigencia), `Liquidacion` (base + plus = total, es_nexo, excluido_por_factura, estado Abierta/Cerrada), `Factura`.
   - Cálculo de liquidación del período (FL-08, RN-21): base por rol vigente + plus por grupos. Vista (F10.1), cerrar (F10.2, inmutable RN-22), historial (F10.3).

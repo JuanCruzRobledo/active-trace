@@ -21,6 +21,8 @@ from app.models.enums import (
     TipoEvaluacion,
     AlcanceAviso,
     SeveridadAviso,
+    EstadoLiquidacion,
+    EstadoFactura,
 )
 from app.models.materia import Materia
 from app.models.password_reset_token import PasswordResetToken
@@ -48,6 +50,11 @@ from app.models.acknowledgment_aviso import AcknowledgmentAviso
 from app.models.tarea import Tarea, ComentarioTarea
 from app.models.programa_materia import ProgramaMateria
 from app.models.fecha_academica import FechaAcademica
+from app.models.clave_plus import ClavePlus
+from app.models.salario_base import SalarioBase
+from app.models.salario_plus import SalarioPlus
+from app.models.liquidacion import Liquidacion
+from app.models.factura import Factura
 
 __all__ = [
     "AcknowledgmentAviso",
@@ -70,8 +77,14 @@ __all__ = [
     "EstadoTarea",
     "TipoFechaAcademica",
     "FechaAcademica",
-    "ProgramaMateria",
     "DiaSemana",
+    "EstadoLiquidacion",
+    "EstadoFactura",
+    "ClavePlus",
+    "SalarioBase",
+    "SalarioPlus",
+    "Liquidacion",
+    "Factura",
     "Evaluacion",
     "Guardia",
     "InstanciaEncuentro",

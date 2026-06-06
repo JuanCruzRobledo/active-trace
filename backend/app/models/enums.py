@@ -70,3 +70,13 @@ class TipoFechaAcademica(str, enum.Enum):
     TP = "TP"
     COLOQUIO = "Coloquio"
     RECUPERATORIO = "Recuperatorio"
+
+
+class EstadoLiquidacion(str, enum.Enum):
+    ABIERTA = "Abierta"
+    CERRADA = "Cerrada"
+
+
+class EstadoFactura(str, enum.Enum):
+    PENDIENTE = "Pendiente"
+    ABONADA = "Abonada"

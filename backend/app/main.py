@@ -30,6 +30,7 @@ from app.api.v1.routers.avisos import router as avisos_router
 from app.api.v1.routers.tareas import router as tareas_router
 from app.api.v1.routers.programas import router as programas_router
 from app.api.v1.routers.fechas_academicas import router as fechas_academicas_router
+from app.api.v1.routers.liquidaciones import router as liquidaciones_router
 from app.core.config import Settings
 from app.core.database import close_engine, init_engine
 from app.core.logging import configure_json_logging
@@ -85,6 +86,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(tareas_router)
     app.include_router(programas_router)
     app.include_router(fechas_academicas_router)
+    app.include_router(liquidaciones_router)
 
     return app
 

@@ -5,7 +5,7 @@ la instancia concreta (Dictado) en una carrera x cohorte se modela aparte
 en changes posteriores (C-07+).
 """
 
-from sqlalchemy import Column, Index, String, text
+from sqlalchemy import Column, ForeignKey, Index, String, text
 
 from app.core.database import Base
 from app.models.base import BaseMixin
@@ -17,6 +17,10 @@ class Materia(Base, BaseMixin):
     codigo = Column(String(50), nullable=False)
     nombre = Column(String(200), nullable=False)
     estado = Column(String(20), nullable=False, default="Activa")
+    clave_plus_id = Column(
+        ForeignKey("clave_plus.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
     __table_args__ = (
         Index("ix_materia_tenant_id", "tenant_id"),

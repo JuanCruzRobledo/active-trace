@@ -65,17 +65,18 @@ Unidad del catálogo académico del tenant. Es la referencia única para todos l
 
 ```
 Materia {
-  id          : UUID       — clave interna
-  tenant_id   : UUID       — FK → Tenant
-  codigo      : texto      — código único dentro del tenant (ej: "PROG_I")
-  nombre      : texto      — nombre completo (ej: "Programación I")
-  estado      : enum       — Activa | Inactiva
+  id            : UUID       — clave interna
+  tenant_id     : UUID       — FK → Tenant
+  codigo        : texto      — código único dentro del tenant (ej: "PROG_I")
+  nombre        : texto      — nombre completo (ej: "Programación I")
+  estado        : enum       — Activa | Inactiva
+  clave_plus_id : UUID       — FK → ClavePlus (nullable; si es nulo, esta materia no genera plus salarial)
 }
-```
 
 **Reglas**:
 - El par `(tenant_id, codigo)` es único.
 - Una misma materia puede pertenecer a distintas carreras y cohortes a través de la entidad Asignación (E5).
+- `clave_plus_id` determina a qué grupo de plus pertenece la materia para el cálculo de liquidaciones (ver E18). Si es nulo, la materia no aporta al cálculo del plus.
 
 ---
 
@@ -463,7 +464,32 @@ SalarioPlus {
 
 **Reglas**:
 - Un docente puede acumular plus de distintos grupos si dicta materias de varios de ellos.
-- La clave `grupo` mapea a un conjunto de materias (definido en configuración del tenant).
+- La clave `grupo` es FK → ClavePlus.codigo (ver E18.5).
+
+---
+
+### E18.5 — Catálogo de claves de Plus
+
+Define las categorías de materias que determinan qué plus salarial aplica. Es configurable por tenant.
+
+```
+ClavePlus {
+  id          : UUID       — clave interna
+  tenant_id   : UUID       — FK → Tenant
+  codigo      : texto      — clave corta única (ej: "PROG", "BD", "MAT")
+  nombre      : texto      — nombre legible (ej: "Programación", "Bases de Datos")
+  descripcion : texto      — opcional, detalle de qué materias agrupa
+  activa      : booleano   — si está desactivada no se usa en nuevos cálculos
+}
+```
+
+**Reglas**:
+- El par `(tenant_id, codigo)` es único.
+- Un tenant puede tener su propio catálogo de claves (no es global de la plataforma).
+- Cada Materia puede tener una `clave_plus_id` opcional que la asocia a una clave (ver E3).
+- El seed inicial de cada tenant nuevo incluye 8 claves por defecto: `PROG`, `BD`, `ING`, `MAT`, `RED`, `WEB`, `GES`, `IDI`, `PRA`.
+
+> **Resolución PA-22**: las claves de Plus se modelan como entidad configurable por tenant, no como enum fijo en código. Cada materia se asocia opcionalmente a una clave mediante `clave_plus_id`. Si no tiene clave asignada, no genera plus.
 
 ---
 
@@ -570,6 +596,7 @@ Tenant (1) ─── (N) Carrera
 Tenant (1) ─── (N) Cohorte
 Tenant (1) ─── (N) Materia
 Tenant (1) ─── (N) Usuario
+Tenant (1) ─── (N) ClavePlus
 
 Carrera (1) ─── (N) Cohorte
 Carrera (1) ─── (N) Asignacion
@@ -579,6 +606,9 @@ Cohorte (1) ─── (N) VersionPadron
 Cohorte (1) ─── (N) Evaluacion
 Cohorte (1) ─── (N) FechaAcademica
 Cohorte (1) ─── (N) Liquidacion
+
+ClavePlus (1) ─── (N) Materia
+ClavePlus (1) ─── (N) SalarioPlus
 
 Materia (1) ─── (N) Asignacion
 Materia (1) ─── (N) VersionPadron
@@ -635,8 +665,9 @@ Estos valores son ejemplos de datos iniciales esperados en una instalación. No 
 | Carrera | Una o más carreras activas por tenant |
 | Cohorte | Múltiples cohortes por carrera (típicamente 2 por año: inicio de primer y segundo cuatrimestre) |
 | Materia | El tenant define su catálogo completo; típicamente decenas de materias |
+| ClavePlus | 8 claves por defecto en seed inicial: PROG, BD, ING, MAT, RED, WEB, GES, IDI, PRA |
 | SalarioBase | Un registro por rol activo, con vigencia desde la fecha de acuerdo |
-| SalarioPlus | Uno o más registros por grupo de materias × rol |
+| SalarioPlus | Uno o más registros por clave de materia × rol |
 
 ---
 

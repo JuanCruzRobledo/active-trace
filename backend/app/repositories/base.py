@@ -96,6 +96,18 @@ class BaseRepository(Generic[T]):
         result = await self.session.scalar(stmt)  # type: ignore[union-attr]
         return result  # type: ignore[no-any-return]
 
+    async def _one_or_none(self, stmt: Select[Any]) -> Optional[T]:
+        """Execute a select query and return one result or None.
+
+        Args:
+            stmt: Scoped SQLAlchemy select query.
+
+        Returns:
+            Single instance or None.
+        """
+        result = await self.session.scalar(stmt)  # type: ignore[union-attr]
+        return result  # type: ignore[no-any-return]
+
     async def list_all(self) -> list[T]:
         """Retorna todos los registros activos del tenant.
 

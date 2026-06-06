@@ -38,47 +38,6 @@ Las cohortes (ej.: "MAR-2026") pueden pertenecer a una carrera específica o ser
 
 ---
 
-### PA-22 — ¿Cuántas claves de Plus existen y cómo se mapean a materias?
-
-El modelo de liquidación define un **Plus** por combinación `(clave, rol)`, donde la clave agrupa familias de materias (ej.: `PROG` para materias de Programación). Ver [RN-31](05_reglas_de_negocio.md#rn-31) a [RN-38](05_reglas_de_negocio.md#rn-38).
-
-**Preguntas abiertas**:
-
-- ¿Cuáles son todas las claves de Plus que existen en el dominio (ej.: `PROG`, `BD`, `ING`, `MAT`, etc.)?
-- ¿Qué materia cae en qué clave? ¿Hay materias sin clave asignada?
-- ¿Ese mapeo es configurable por tenant o está fijo para toda la plataforma?
-- ¿Lo define el ADMIN del tenant o viene preconfigurado desde la institución?
-
----
-
-### PA-23 — ¿Cómo se calcula el Plus cuando un docente tiene N comisiones de la misma clave?
-
-Si un PROFESOR tiene tres comisiones de materias que caen bajo la clave `PROG`:
-
-**Preguntas abiertas**:
-
-- ¿Se acumula `3 × Plus(PROG, PROFESOR)` o se aplica una sola vez sin importar la cantidad de comisiones?
-- ¿Existe un tope de acumulación?
-- ¿La lógica cambia según el rol (TUTOR vs. PROFESOR vs. COORDINADOR)?
-
-**Impacto**: es la regla de negocio central del módulo de liquidaciones. Sin ella no se puede implementar el cálculo.
-
----
-
-### PA-25 — ¿Cuál es la semántica precisa del rol NEXO?
-
-El rol NEXO existe en el dominio, tiene tratamiento contable propio y aparece en el catálogo de roles, pero su función operativa no está completamente especificada.
-
-**Preguntas abiertas**:
-
-- ¿Un NEXO está asociado a una regional, a un programa, a un grupo de docentes, o a un grupo de alumnos?
-- ¿Tiene acceso a datos de alumnos? ¿A qué granularidad?
-- ¿Puede asignar o reasignar docentes a comisiones?
-- ¿Su función es principalmente de enlace administrativo o también pedagógico?
-- ¿Un usuario puede ser NEXO y COORDINADOR al mismo tiempo?
-
-**Impacto**: define qué permisos incluir en el rol NEXO dentro de la matriz de autorización ([03_actores_y_roles.md](03_actores_y_roles.md)).
-
 ---
 
 ## Prioridad MEDIA — refinamiento del modelo
@@ -243,6 +202,9 @@ Las siguientes preguntas que existían en versiones anteriores de este documento
 | PA-04 | Login por email + contraseña; 2FA opcional (TOTP); recuperación por token de un solo uso; alta solo administrativa en MVP | [07_flujos_principales.md](07_flujos_principales.md), [`docs/ARQUITECTURA.md` §5.1](../docs/ARQUITECTURA.md) |
 | PA-06 | Fórmula de liquidación: Base (por rol) + Plus (por clave × rol); ver RN-31 a RN-38 | [05_reglas_de_negocio.md](05_reglas_de_negocio.md) |
 | PA-21 | Impersonación via parámetro de petición: eliminada. La impersonación legítima requiere permiso explícito, sesión diferenciada y auditoría completa | [03_actores_y_roles.md §4](03_actores_y_roles.md), [`docs/ARQUITECTURA.md`](../docs/ARQUITECTURA.md) |
+| PA-22 | Catálogo de claves de Plus como entidad configurable por tenant (`ClavePlus`). 8 claves por defecto: PROG, BD, ING, MAT, RED, WEB, GES, IDI, PRA. Cada materia se asocia opcionalmente mediante `clave_plus_id` (nullable). Si no tiene clave asignada, no genera plus. Lo define el ADMIN del tenant en la grilla salarial. | [04_modelo_de_datos.md §E3 y §E18.5](04_modelo_de_datos.md), [05_reglas_de_negocio.md RN-33 y RN-34](05_reglas_de_negocio.md) |
+| PA-23 | Se acumula N veces el plus sin tope (`3 comisiones PROG → 3 × Plus(PROG, PROFESOR)`). La lógica es la misma para PROFESOR y TUTOR. COORDINADOR y NEXO no generan plus (no dictan comisiones). | [05_reglas_de_negocio.md RN-33 y RN-34](05_reglas_de_negocio.md) |
+| PA-25 | NEXO es enlace administrativo asociado a carreras/cohortes (no a comisiones). Acceso solo lectura a datos de alumnos de su cohorte. No asigna docentes ni modifica calificaciones. Tiene base salarial propia pero no genera plus. Puede coexistir con otros roles. Se visibiliza separado en liquidaciones pero suma al total (RN-36). | [03_actores_y_roles.md](03_actores_y_roles.md), [05_reglas_de_negocio.md RN-32 y RN-36](05_reglas_de_negocio.md) |
 
 ---
 
