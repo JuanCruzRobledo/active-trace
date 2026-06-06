@@ -156,6 +156,7 @@ async def db_engine(settings: Settings):
         SAEnum("Activa", "Inactiva", name="estado_evaluacion"),
         SAEnum("Activa", "Cancelada", name="estado_reserva"),
         SAEnum("Pendiente", "En progreso", "Resuelta", "Cancelada", name="estado_tarea"),
+        SAEnum("Parcial", "TP", "Coloquio", "Recuperatorio", name="tipo_fecha_academica"),
     ]
     async with _engine.begin() as conn:
         for enum_def in enum_defs:

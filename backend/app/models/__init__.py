@@ -46,6 +46,8 @@ from app.models.resultado_evaluacion import ResultadoEvaluacion
 from app.models.aviso import Aviso
 from app.models.acknowledgment_aviso import AcknowledgmentAviso
 from app.models.tarea import Tarea, ComentarioTarea
+from app.models.programa_materia import ProgramaMateria
+from app.models.fecha_academica import FechaAcademica
 
 __all__ = [
     "AcknowledgmentAviso",
@@ -66,6 +68,9 @@ __all__ = [
     "EstadoEvaluacion",
     "EstadoReserva",
     "EstadoTarea",
+    "TipoFechaAcademica",
+    "FechaAcademica",
+    "ProgramaMateria",
     "DiaSemana",
     "Evaluacion",
     "Guardia",

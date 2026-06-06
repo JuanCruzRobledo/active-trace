@@ -89,6 +89,7 @@ ROLE_PERMISOS: dict[str, list[str]] = {
     "ADMIN": [p[0] for p in PERMISOS],  # Todos (incluye tareas:gestionar)
     "COORDINADOR": [
         "atrasados:ver", "equipos:ver", "equipos:asignar",
+        "estructura:gestionar",
         "encuentros:gestionar", "encuentros:ver-admin",
         "guardias:registrar", "guardias:ver-admin",
         "coloquios:gestionar", "coloquios:ver",

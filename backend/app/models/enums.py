@@ -63,3 +63,10 @@ class EstadoTarea(str, enum.Enum):
     EN_PROGRESO = "En progreso"
     RESUELTA = "Resuelta"
     CANCELADA = "Cancelada"
+
+
+class TipoFechaAcademica(str, enum.Enum):
+    PARCIAL = "Parcial"
+    TP = "TP"
+    COLOQUIO = "Coloquio"
+    RECUPERATORIO = "Recuperatorio"
