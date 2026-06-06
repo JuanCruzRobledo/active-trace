@@ -152,6 +152,9 @@ async def db_engine(settings: Settings):
             "Viernes", "Sábado", "Domingo",
             name="dia_semana",
         ),
+        SAEnum("Parcial", "TP", "Coloquio", "Recuperatorio", name="tipo_evaluacion"),
+        SAEnum("Activa", "Inactiva", name="estado_evaluacion"),
+        SAEnum("Activa", "Cancelada", name="estado_reserva"),
     ]
     async with _engine.begin() as conn:
         for enum_def in enum_defs:

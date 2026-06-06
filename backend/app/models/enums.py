@@ -26,3 +26,20 @@ class DiaSemana(str, enum.Enum):
     VIERNES = "Viernes"
     SABADO = "Sábado"
     DOMINGO = "Domingo"
+
+
+class TipoEvaluacion(str, enum.Enum):
+    PARCIAL = "Parcial"
+    TP = "TP"
+    COLOQUIO = "Coloquio"
+    RECUPERATORIO = "Recuperatorio"
+
+
+class EstadoEvaluacion(str, enum.Enum):
+    ACTIVA = "Activa"
+    INACTIVA = "Inactiva"
+
+
+class EstadoReserva(str, enum.Enum):
+    ACTIVA = "Activa"
+    CANCELADA = "Cancelada"

@@ -76,6 +76,9 @@ PERMISOS = [
     ("encuentros:ver-admin", "Ver todos los encuentros del tenant"),
     ("guardias:registrar", "Registrar guardias (propias o de cualquier docente)"),
     ("guardias:ver-admin", "Ver y exportar todas las guardias del tenant"),
+    ("coloquios:gestionar", "Gestionar coloquios (crear convocatorias, importar alumnos, cerrar)"),
+    ("coloquios:reservar", "Reservar turno de coloquio y cancelar reserva propia"),
+    ("coloquios:ver", "Ver coloquios, métricas y agenda del tenant"),
 ]
 
 # QUÉ permisos tiene cada rol
@@ -85,15 +88,19 @@ ROLE_PERMISOS: dict[str, list[str]] = {
         "atrasados:ver", "equipos:ver", "equipos:asignar",
         "encuentros:gestionar", "encuentros:ver-admin",
         "guardias:registrar", "guardias:ver-admin",
+        "coloquios:gestionar", "coloquios:ver",
     ],
     "PROFESOR": [
         "atrasados:ver", "equipos:ver",
         "encuentros:gestionar", "guardias:registrar",
+        "coloquios:ver",
     ],
     "TUTOR": [
         "atrasados:ver", "guardias:registrar",
     ],
-    "ALUMNO": [],
+    "ALUMNO": [
+        "coloquios:reservar",
+    ],
 }
 
 USERS = [
@@ -722,7 +729,7 @@ async def ensure_slot_recurrente(
 
 async def ensure_instancias(session, slot_id: UUID, materia_id: UUID) -> None:
     """Crea instancias de ejemplo para un slot si no existen."""
-    from datetime import date, timedelta
+    from datetime import date, time, timedelta
 
     # Check if instances already exist for this slot
     result = await session.execute(
@@ -752,7 +759,7 @@ async def ensure_instancias(session, slot_id: UUID, materia_id: UUID) -> None:
                 "sid": slot_id,
                 "mid": materia_id,
                 "fecha": base_fecha + timedelta(weeks=i),
-                "hora": "18:00",
+                "hora": time(18, 0),
                 "tit": "Clase de Análisis Matemático I",
                 "est": "Programado",
                 "meet": "https://meet.google.com/abc-defg-hij",
