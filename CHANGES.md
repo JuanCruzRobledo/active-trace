@@ -402,7 +402,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 ✓ → C-11
   - `knowledge-base/07_flujos_principales.md` FL-09 (publicación de aviso)
 
 ### [C-16] `tareas-internas`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado — 65 tests passing, archived 2026-06-06
 - **Scope**:
   - Modelos `Tarea` (asignado_a, asignado_por, estado Pendiente/En progreso/Resuelta/Cancelada, contexto_id) y `ComentarioTarea`.
   - Mis tareas (F8.1); asignar/delegar tarea a otro docente (F8.2); administración global con filtros (F8.3); cambio de estado + comentarios (workflow asincrónico).

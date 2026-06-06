@@ -56,3 +56,10 @@ class SeveridadAviso(str, enum.Enum):
     INFO = "Info"
     ADVERTENCIA = "Advertencia"
     CRITICO = "Crítico"
+
+
+class EstadoTarea(str, enum.Enum):
+    PENDIENTE = "Pendiente"
+    EN_PROGRESO = "En progreso"
+    RESUELTA = "Resuelta"
+    CANCELADA = "Cancelada"

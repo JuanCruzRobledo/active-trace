@@ -17,6 +17,7 @@ from app.models.enums import (
     EstadoGuardia,
     EstadoEvaluacion,
     EstadoReserva,
+    EstadoTarea,
     TipoEvaluacion,
     AlcanceAviso,
     SeveridadAviso,
@@ -44,6 +45,7 @@ from app.models.reserva_evaluacion import ReservaEvaluacion
 from app.models.resultado_evaluacion import ResultadoEvaluacion
 from app.models.aviso import Aviso
 from app.models.acknowledgment_aviso import AcknowledgmentAviso
+from app.models.tarea import Tarea, ComentarioTarea
 
 __all__ = [
     "AcknowledgmentAviso",
@@ -55,6 +57,7 @@ __all__ = [
     "Calificacion",
     "Carrera",
     "Cohorte",
+    "ComentarioTarea",
     "Comunicacion",
     "EntradaPadron",
     "EstadoComunicacion",
@@ -62,6 +65,7 @@ __all__ = [
     "EstadoGuardia",
     "EstadoEvaluacion",
     "EstadoReserva",
+    "EstadoTarea",
     "DiaSemana",
     "Evaluacion",
     "Guardia",
@@ -78,6 +82,7 @@ __all__ = [
     "RefreshToken",
     "Rol",
     "RolPermiso",
+    "Tarea",
     "Tenant",
     "Usuario",
     "UmbralMateria",
