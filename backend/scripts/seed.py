@@ -79,6 +79,8 @@ PERMISOS = [
     ("coloquios:gestionar", "Gestionar coloquios (crear convocatorias, importar alumnos, cerrar)"),
     ("coloquios:reservar", "Reservar turno de coloquio y cancelar reserva propia"),
     ("coloquios:ver", "Ver coloquios, métricas y agenda del tenant"),
+    ("avisos:gestionar", "Gestionar avisos institucionales (crear, editar, eliminar, ver tracking)"),
+    ("avisos:ver", "Ver avisos, timeline y confirmar lectura"),
 ]
 
 # QUÉ permisos tiene cada rol
@@ -89,17 +91,21 @@ ROLE_PERMISOS: dict[str, list[str]] = {
         "encuentros:gestionar", "encuentros:ver-admin",
         "guardias:registrar", "guardias:ver-admin",
         "coloquios:gestionar", "coloquios:ver",
+        "avisos:gestionar", "avisos:ver",
     ],
     "PROFESOR": [
         "atrasados:ver", "equipos:ver",
         "encuentros:gestionar", "guardias:registrar",
         "coloquios:ver",
+        "avisos:ver",
     ],
     "TUTOR": [
         "atrasados:ver", "guardias:registrar",
+        "avisos:ver",
     ],
     "ALUMNO": [
         "coloquios:reservar",
+        "avisos:ver",
     ],
 }
 

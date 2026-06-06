@@ -26,6 +26,7 @@ from app.api.v1.routers.usuarios import router as usuarios_router
 from app.api.v1.routers.encuentros import router as encuentros_router
 from app.api.v1.routers.guardias import router as guardias_router
 from app.api.v1.routers.coloquios import router as coloquios_router
+from app.api.v1.routers.avisos import router as avisos_router
 from app.core.config import Settings
 from app.core.database import close_engine, init_engine
 from app.core.logging import configure_json_logging
@@ -77,6 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(encuentros_router)
     app.include_router(guardias_router)
     app.include_router(coloquios_router)
+    app.include_router(avisos_router)
 
     return app
 
