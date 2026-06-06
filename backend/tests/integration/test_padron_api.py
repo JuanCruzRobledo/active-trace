@@ -13,6 +13,7 @@ Requiere PostgreSQL real (DATABASE_URL_TEST en el entorno).
 from __future__ import annotations
 
 import io
+from datetime import date
 from uuid import UUID, uuid4
 
 import pytest
@@ -117,8 +118,8 @@ async def _seed_materia_cohorte(db_session: AsyncSession) -> tuple[UUID, UUID]:
     carrera_id = uuid4()
     await db_session.execute(
         text(
-            "INSERT INTO carrera (id, tenant_id, nombre, codigo, created_at, updated_at) "
-            "VALUES (:id, :tenant_id, :nombre, :codigo, now(), now()) "
+            "INSERT INTO carrera (id, tenant_id, nombre, codigo, estado, created_at, updated_at) "
+            "VALUES (:id, :tenant_id, :nombre, :codigo, 'Activa', now(), now()) "
             "ON CONFLICT DO NOTHING"
         ),
         {
@@ -129,12 +130,12 @@ async def _seed_materia_cohorte(db_session: AsyncSession) -> tuple[UUID, UUID]:
         },
     )
 
-    # Materia
+    # Materia (solo columnas existentes: sin carrera_id, sin carga_horaria)
     await db_session.execute(
         text(
             "INSERT INTO materia (id, tenant_id, nombre, codigo, "
-            "carrera_id, carga_horaria, created_at, updated_at) "
-            "VALUES (:id, :tenant_id, :nombre, :codigo, :carrera_id, :carga, now(), now()) "
+            "estado, created_at, updated_at) "
+            "VALUES (:id, :tenant_id, :nombre, :codigo, 'Activa', now(), now()) "
             "ON CONFLICT DO NOTHING"
         ),
         {
@@ -142,23 +143,25 @@ async def _seed_materia_cohorte(db_session: AsyncSession) -> tuple[UUID, UUID]:
             "tenant_id": _DEV_TENANT_ID,
             "nombre": "Matematicas",
             "codigo": "MAT101",
-            "carrera_id": carrera_id,
-            "carga": 120,
         },
     )
 
-    # Cohorte
+    # Cohorte (solo columnas existentes: nombre, anio, vig_desde; sin codigo)
     await db_session.execute(
         text(
-            "INSERT INTO cohorte (id, tenant_id, nombre, codigo, created_at, updated_at) "
-            "VALUES (:id, :tenant_id, :nombre, :codigo, now(), now()) "
+            "INSERT INTO cohorte (id, tenant_id, carrera_id, nombre, anio, "
+            "vig_desde, estado, created_at, updated_at) "
+            "VALUES (:id, :tenant_id, :carrera_id, :nombre, :anio, "
+            ":vig_desde, 'Activa', now(), now()) "
             "ON CONFLICT DO NOTHING"
         ),
         {
             "id": cohorte_id,
             "tenant_id": _DEV_TENANT_ID,
-            "nombre": "2025",
-            "codigo": "C2025",
+            "carrera_id": carrera_id,
+            "nombre": "C2025",
+            "anio": 2025,
+            "vig_desde": date(2025, 1, 1),
         },
     )
 
@@ -171,16 +174,16 @@ async def _seed_usuario_email(db_session: AsyncSession, email: str) -> UUID:
     user_id = uuid4()
     await db_session.execute(
         text(
-            "INSERT INTO usuario (id, tenant_id, email, nombres, apellidos, "
-            "activo, created_at, updated_at) "
-            "VALUES (:id, :tenant_id, :email, :nombres, :apellidos, true, now(), now()) "
+            "INSERT INTO usuario (id, tenant_id, email, nombre, apellidos, "
+            "estado, created_at, updated_at) "
+            "VALUES (:id, :tenant_id, :email, :nombre, :apellidos, 'Activo', now(), now()) "
             "ON CONFLICT DO NOTHING"
         ),
         {
             "id": user_id,
             "tenant_id": _DEV_TENANT_ID,
             "email": email,
-            "nombres": "Juan",
+            "nombre": "Juan",
             "apellidos": "Perez",
         },
     )

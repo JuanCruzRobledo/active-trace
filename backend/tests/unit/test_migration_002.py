@@ -35,6 +35,13 @@ def _test_db_url() -> str:
     )
 
 
+def _db_name() -> str:
+    """Extrae el nombre de la base de datos desde la URL de test."""
+    url = _test_db_url()
+    # Formato: postgresql+asyncpg://user:password@host:port/dbname
+    return url.rstrip("/").split("/")[-1].split("?")[0]
+
+
 async def _table_exists(db: str, table_name: str) -> bool:
     """Verifica si una tabla existe en la BD de test usando asyncpg."""
     import asyncpg
@@ -80,36 +87,29 @@ async def _get_columns(db: str, table_name: str) -> set[str]:
 
 
 def _clean_test_db():
-    """Limpia las tablas de test (por si quedaron de runs previos).
-
-    Incluye todas las tablas conocidas hasta la migración 004.
-    El orden importa: primero las que tienen FKs entrantes, después las
-    referenciadas, y por último alembic_version.
-    """
+    """Limpia todas las tablas de test consultando information_schema."""
     import asyncio
     import asyncpg
 
     async def drop():
+        db = _db_name()
         conn = await asyncpg.connect(
             user="postgres",
             password="nikolan",
-            database="trace_test",
+            database=db,
             host="localhost",
             port=5432,
         )
-        for table in [
-            "user_rol",              # 004
-            "rol_permiso",           # 003
-            "rol",                   # 003
-            "permiso",               # 003
-            "two_factor_challenge",  # 002
-            "password_reset_token",  # 002
-            "refresh_token",         # 002
-            "users",                 # 002
-            "tenant",                # 001
-            "alembic_version",       # alembic
-        ]:
-            await conn.execute(f"DROP TABLE IF EXISTS {table} CASCADE")
+        tables = await conn.fetch(
+            "SELECT tablename FROM pg_tables "
+            "WHERE schemaname = 'public' AND tablename != 'alembic_version' "
+            "ORDER BY tablename"
+        )
+        for row in tables:
+            table = row["tablename"]
+            await conn.execute(f'DROP TABLE IF EXISTS "{table}" CASCADE')
+        # Drop alembic_version last (may depend on nothing)
+        await conn.execute("DROP TABLE IF EXISTS alembic_version")
         await conn.close()
 
     asyncio.run(drop())
@@ -199,10 +199,10 @@ class TestMigration002Upgrade:
                     },
                 ),
             ]:
-                assert await _table_exists("trace_test", table), (
+                assert await _table_exists(_db_name(), table), (
                     f"Tabla {table} no existe después de upgrade head"
                 )
-                cols = await _get_columns("trace_test", table)
+                cols = await _get_columns(_db_name(), table)
                 missing = expected_cols - cols
                 assert not missing, (
                     f"Tabla {table} falta columnas: {missing}. Presentes: {cols}"
@@ -228,7 +228,7 @@ class TestMigration002Upgrade:
             conn = await asyncpg.connect(
                 user="postgres",
                 password="nikolan",
-                database="trace_test",
+                database=_db_name(),
                 host="localhost",
                 port=5432,
             )
@@ -262,7 +262,7 @@ class TestMigration002Upgrade:
             conn = await asyncpg.connect(
                 user="postgres",
                 password="nikolan",
-                database="trace_test",
+                database=_db_name(),
                 host="localhost",
                 port=5432,
             )
@@ -309,7 +309,7 @@ class TestMigration002Upgrade:
             conn = await asyncpg.connect(
                 user="postgres",
                 password="nikolan",
-                database="trace_test",
+                database=_db_name(),
                 host="localhost",
                 port=5432,
             )
@@ -353,7 +353,7 @@ class TestMigration002Upgrade:
 
         async def verify():
             for table in ["password_reset_token", "two_factor_challenge"]:
-                cols = await _get_columns("trace_test", table)
+                cols = await _get_columns(_db_name(), table)
                 assert "deleted_at" not in cols, (
                     f"Tabla efímera {table} NO debería tener deleted_at. "
                     f"Columnas presentes: {cols}"
@@ -373,7 +373,7 @@ class TestMigration002Upgrade:
 
         async def verify():
             for table in ["users", "refresh_token"]:
-                cols = await _get_columns("trace_test", table)
+                cols = await _get_columns(_db_name(), table)
                 assert "deleted_at" in cols, (
                     f"Tabla {table} DEBE tener deleted_at (soft delete)"
                 )
@@ -409,7 +409,7 @@ class TestMigration002RoundTrip:
 
         async def verify():
             # tenant permanece
-            assert await _table_exists("trace_test", "tenant")
+            assert await _table_exists(_db_name(), "tenant")
             # Las 4 auth se eliminaron
             for table in [
                 "users",
@@ -417,7 +417,7 @@ class TestMigration002RoundTrip:
                 "password_reset_token",
                 "two_factor_challenge",
             ]:
-                assert not await _table_exists("trace_test", table), (
+                assert not await _table_exists(_db_name(), table), (
                     f"Tabla {table} no debería existir tras downgrade 001"
                 )
 
@@ -444,7 +444,7 @@ class TestMigration002RoundTrip:
                 "password_reset_token",
                 "two_factor_challenge",
             ]:
-                assert await _table_exists("trace_test", table)
+                assert await _table_exists(_db_name(), table)
 
         asyncio.run(step1())
 
@@ -459,7 +459,7 @@ class TestMigration002RoundTrip:
                 "two_factor_challenge",
                 "tenant",
             ]:
-                assert not await _table_exists("trace_test", table), (
+                assert not await _table_exists(_db_name(), table), (
                     f"Tabla {table} no debería existir tras downgrade base"
                 )
 
@@ -476,7 +476,7 @@ class TestMigration002RoundTrip:
                 "two_factor_challenge",
                 "tenant",
             ]:
-                assert await _table_exists("trace_test", table), (
+                assert await _table_exists(_db_name(), table), (
                     f"Tabla {table} debería existir tras re-upgrade"
                 )
 

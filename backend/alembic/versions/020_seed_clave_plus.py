@@ -61,9 +61,11 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     conn = op.get_bind()
-    conn.execute(
-        sa.text(
-            "DELETE FROM clave_plus WHERE tenant_id = :tenant_id AND codigo IN (:codigos)"
-        ),
-        {"tenant_id": _DEV_TENANT_ID, "codigos": ["PROG", "BD", "MAT", "ING", "RED", "WEB", "GES", "IDI"]},
-    )
+    codigos = ["PROG", "BD", "MAT", "ING", "RED", "WEB", "GES", "IDI"]
+    for codigo in codigos:
+        conn.execute(
+            sa.text(
+                "DELETE FROM clave_plus WHERE tenant_id = :tenant_id AND codigo = :codigo"
+            ),
+            {"tenant_id": _DEV_TENANT_ID, "codigo": codigo},
+        )
