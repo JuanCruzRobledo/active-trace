@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -10,11 +10,16 @@ vi.mock("@/features/monitores/hooks/useMonitorSeguimiento", () => ({
   useMonitorSeguimiento: vi.fn(),
 }));
 
+vi.mock("@/features/monitores/hooks/useMonitorGeneral", () => ({
+  useMonitorGeneral: vi.fn(),
+}));
+
 vi.mock("@/features/monitores/services/seguimiento", () => ({
   exportarMonitores: vi.fn(),
 }));
 
 import { useMonitorSeguimiento } from "@/features/monitores/hooks/useMonitorSeguimiento";
+import { useMonitorGeneral } from "@/features/monitores/hooks/useMonitorGeneral";
 import { MonitoresPage } from "@/features/monitores/pages/MonitoresPage";
 import { exportarMonitores } from "@/features/monitores/services/seguimiento";
 
@@ -31,7 +36,7 @@ function renderPage() {
   );
 }
 
-const mockData = {
+const mockSeguimientoData = {
   items: [
     {
       alumno_id: "a1",
@@ -57,10 +62,34 @@ const mockData = {
   total: 2,
 };
 
+const mockGeneralData = {
+  items: [
+    {
+      alumno_id: "g1",
+      alumno: "Carlos Ruiz",
+      correo: "carlos@test.com",
+      comision: "C-303",
+      materia: "Química",
+      total_actividades: 10,
+      aprobadas: 7,
+      pendientes: 3,
+      ultima_actividad: "TP4",
+      estado_general: "en_seguimiento" as const,
+    },
+  ],
+  total: 1,
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   (useMonitorSeguimiento as unknown as Mock).mockReturnValue({
-    data: mockData,
+    data: mockSeguimientoData,
+    isLoading: false,
+    isError: false,
+    error: null,
+  });
+  (useMonitorGeneral as unknown as Mock).mockReturnValue({
+    data: mockGeneralData,
     isLoading: false,
     isError: false,
     error: null,
@@ -73,7 +102,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("MonitoresPage", () => {
-  it("renders table with monitor data", () => {
+  it("renders seguimiento tab by default with monitor data", () => {
     renderPage();
     expect(screen.getByText("Monitor de seguimiento")).toBeInTheDocument();
     expect(screen.getByText("Ana Gomez")).toBeInTheDocument();
@@ -81,13 +110,20 @@ describe("MonitoresPage", () => {
     expect(screen.getByText("ana@test.com")).toBeInTheDocument();
   });
 
-  it("shows all filter inputs", () => {
+  it("shows all filter inputs in seguimiento tab", () => {
     renderPage();
     expect(screen.getByPlaceholderText("Filtrar por nombre")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Filtrar por correo")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Comisión")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Materia")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Actividad")).toBeInTheDocument();
+  });
+
+  it("shows date range filter inputs in seguimiento tab", () => {
+    renderPage();
+    // Buscamos los inputs de tipo date por su label
+    expect(screen.getByText("Desde")).toBeInTheDocument();
+    expect(screen.getByText("Hasta")).toBeInTheDocument();
   });
 
   it("calls export on button click", async () => {
@@ -107,7 +143,7 @@ describe("MonitoresPage", () => {
     expect(nombreInput).toHaveValue("");
   });
 
-  it("shows empty state when no data", () => {
+  it("shows empty state when no seguimiento data", () => {
     (useMonitorSeguimiento as unknown as Mock).mockReturnValue({
       data: { items: [], total: 0 },
       isLoading: false,
@@ -120,7 +156,7 @@ describe("MonitoresPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows error state", () => {
+  it("shows error state in seguimiento", () => {
     (useMonitorSeguimiento as unknown as Mock).mockReturnValue({
       data: null,
       isLoading: false,
@@ -141,5 +177,52 @@ describe("MonitoresPage", () => {
     renderPage();
     expect(screen.getByText("Monitor de seguimiento")).toBeInTheDocument();
     expect(screen.queryByText("Ana Gomez")).not.toBeInTheDocument();
+  });
+
+  it("switches to general tab and shows general content", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByText("General"));
+    await waitFor(() => {
+      expect(screen.getByText("Monitor General")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByText("Estado general de actividades por alumno"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows general table data when general tab is active", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByText("General"));
+    await waitFor(() => {
+      expect(screen.getByText("Carlos Ruiz")).toBeInTheDocument();
+    });
+    expect(screen.getByText("carlos@test.com")).toBeInTheDocument();
+  });
+
+  it("shows general view filter inputs", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByText("General"));
+    await waitFor(() => {
+      expect(screen.getByText("Monitor General")).toBeInTheDocument();
+    });
+    expect(screen.getByPlaceholderText("Regional")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Comisión"),
+    ).toBeInTheDocument();
+  });
+
+  it("switches back to seguimiento tab after viewing general", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByText("General"));
+    await waitFor(() => {
+      expect(screen.getByText("Monitor General")).toBeInTheDocument();
+    });
+    await user.click(screen.getByText("Seguimiento"));
+    expect(screen.getByText("Monitor de seguimiento")).toBeInTheDocument();
+    expect(screen.getByText("Ana Gomez")).toBeInTheDocument();
   });
 });

@@ -23,6 +23,8 @@ export interface MonitoresFilters {
   materia?: string;
   actividad?: string;
   actividades_min?: number;
+  fecha_desde?: string;
+  fecha_hasta?: string;
 }
 
 /** Respuesta cruda del backend */
@@ -48,11 +50,13 @@ export async function getMonitores(
   filters?: MonitoresFilters,
 ): Promise<MonitoresResponse> {
   const params: Record<string, string> = {};
-  // El backend soporta actividad y min_aprobadas; el resto se filtra en cliente
+  // El backend soporta actividad, min_aprobadas, fecha_desde, fecha_hasta; el resto se filtra en cliente
   if (filters?.actividad) params.actividad = filters.actividad;
   if (filters?.actividades_min !== undefined) {
     params.min_aprobadas = String(filters.actividades_min);
   }
+  if (filters?.fecha_desde) params.fecha_desde = filters.fecha_desde;
+  if (filters?.fecha_hasta) params.fecha_hasta = filters.fecha_hasta;
   const { data } = await api.get<BackendMonitorResponse>(
     `/analisis/monitor-seguimiento`,
     { params },
