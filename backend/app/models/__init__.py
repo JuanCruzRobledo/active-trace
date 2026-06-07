@@ -55,6 +55,7 @@ from app.models.salario_base import SalarioBase
 from app.models.salario_plus import SalarioPlus
 from app.models.liquidacion import Liquidacion
 from app.models.factura import Factura
+from app.models.mensaje import MensajeHilo, Mensaje
 
 __all__ = [
     "AcknowledgmentAviso",
@@ -107,4 +108,6 @@ __all__ = [
     "UserRol",
     "TwoFactorChallenge",
     "User",
+    "MensajeHilo",
+    "Mensaje",
 ]
