@@ -76,15 +76,21 @@ La fuente de verdad del dominio vive en `knowledge-base/` (agnóstica de tecnolo
 
 Cargá la skill correspondiente al contexto **ANTES** de escribir código. Aplicá todos sus patrones.
 
-| Agente | Rol | Skills que carga |
-|--------|-----|------------------|
-| **Backend Core** | FastAPI / SQLAlchemy / migraciones / modelos | `fastapi-templates`, `postgresql-table-design`, `python-testing-patterns`, `test-driven-development` |
-| **Backend Aux** | Servicios, integraciones, seguridad, performance | `api-security-best-practices`, `postgresql-optimization`, `systematic-debugging` |
-| **Frontend** | React / TanStack / Tailwind / E2E | `typescript-advanced-types`, `tailwind-design-system`, `playwright-best-practices` |
-| **DevOps** | Contenedores / build | `multi-stage-dockerfile` |
-| **Transversal** | Calidad / revisión | `code-review-excellence`, `systematic-debugging` |
-| **Orquestación** | SDD / OPSX / docs | `kb-creator`, `roadmap-generator`, `agent-instruction`, `find-skill` |
+| Contexto de activación | Skill | Archivo a leer |
+|------------------------|-------|----------------|
+| Cualquier endpoint FastAPI, service, repository, schema Pydantic, UoW, router | `fastapi-templates` | `.agents/skills/fastapi-templates/SKILL.md` |
+| Queries SQL, migraciones Alembic, optimización PostgreSQL, índices | `sqlalchemy-alembic-expert-best-practices-code-review` | `.agents/skills/sqlalchemy-alembic-expert-best-practices-code-review/SKILL.md` |
+| Componentes React, páginas, hooks, Tailwind, estilo visual del frontend | `dashboard-crud-page` | `.agents/skills/dashboard-crud-page/SKILL.md` |
+| Design system, tokens, componentes Tailwind reutilizables, sistema de clases | `tailwind-design-system` | `.agents/skills/tailwind-design-system/SKILL.md` |
+| El usuario pregunta qué skill usar o si existe una skill para X | `find-skills` | `.agents/skills/find-skills/SKILL.md` |
+| Arquitectura limpia, patrones de diseño y estructura del proyecto | `architecture-patterns` | `.agents/skills/architecture-patterns/SKILL.md` |
+| Revisión de lógica Python, buenas prácticas y validación de código | `python-expert-best-practices-code-review` | `.agents/skills/python-expert-best-practices-code-review/SKILL.md` |
+| Análisis de código Python mediante herramientas automatizadas | `python-code-review` | `.agents/skills/python-code-review/SKILL.md` |
+| Planificación de tareas, hitos del proyecto y hojas de ruta| `roadmap-generator` | `.agents/skills/roadmap-generator/SKILL.md` |
+| Definición de contratos de API y especificaciones OpenAPI/Swagger| `openapi-specification-v2` | `.agents/skills/openapi-specification-v2/SKILL.md` |
+| Documentación técnica, bases de conocimiento y guías del proyecto| `kb-creator` | `.agents/skills/kb-creator/SKILL.md` |
 
+> **Regla:** si el contexto activa una skill, leé el `SKILL.md` correspondiente **antes** de generar código. Múltiples skills pueden aplicar simultáneamente.
 > **Gap conocido**: no hay skill de buenas prácticas React instalada (`vercel-react-best-practices` recomendada pero NO instalada por decisión del usuario). El stack queda cubierto ~100% por las skills preinstaladas.
 
 ---

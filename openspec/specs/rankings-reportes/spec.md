@@ -51,3 +51,39 @@ El sistema SHALL detectar entregas finalizadas sin calificación y que sean de t
 #### Scenario: Actividad ya calificada no aparece como pendiente
 - **WHEN** se consultan TPs sin corregir y una actividad textual ya tiene calificación registrada
 - **THEN** el sistema NO incluye esa entrega en el listado.
+
+### Requirement: Página de ranking de actividades aprobadas (frontend)
+El sistema SHALL proveer una página donde el PROFESOR vea el ranking de alumnos por actividades aprobadas.
+
+#### Scenario: Visualizar ranking
+- **WHEN** el usuario navega a `/comision/:materiaId/rankings`
+- **THEN** el sistema muestra una tabla ordenada por cantidad de actividades aprobadas descendente, con columnas: alumno, actividades aprobadas, total actividades, porcentaje
+
+#### Scenario: Ranking vacío
+- **WHEN** no hay alumnos con actividades aprobadas
+- **THEN** el sistema muestra un mensaje "Aún no hay datos de actividades aprobadas"
+
+### Requirement: Página de notas finales agrupadas (frontend)
+El sistema SHALL proveer una vista de notas finales calculadas por alumno.
+
+#### Scenario: Visualizar notas finales
+- **WHEN** el usuario navega a `/comision/:materiaId/rankings?view=notas-finales`
+- **THEN** el sistema muestra una tabla con alumno y nota final calculada, lista para exportar
+
+### Requirement: Página de reportes rápidos (frontend)
+El sistema SHALL proveer una página con métricas consolidadas de la materia.
+
+#### Scenario: Visualizar reportes rápidos
+- **WHEN** el usuario navega a `/comision/:materiaId/reportes`
+- **THEN** el sistema muestra tarjetas con métricas: total alumnos, actividades registradas, % aprobación, alumnos atrasados, alumnos al día
+
+#### Scenario: Estado sin datos
+- **WHEN** la materia no tiene datos importados
+- **THEN** el sistema muestra un estado informativo "No hay datos disponibles. Importe calificaciones primero."
+
+### Requirement: Exportar entregas sin corregir (frontend)
+El sistema SHALL permitir descargar un listado de entregas pendientes de corrección.
+
+#### Scenario: Exportar listado
+- **WHEN** el usuario hace clic en "Exportar entregas sin corregir"
+- **THEN** el sistema descarga un archivo CSV con el listado de entregas pendientes por alumno y actividad

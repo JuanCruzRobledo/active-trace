@@ -113,6 +113,7 @@ class ActividadEstado(BaseModel):
     nota_numerica: float | None = None
     nota_textual: str | None = None
     aprobado: bool | None = None
+    materia_nombre: str | None = None
 
 
 class AlumnoMonitorEntry(BaseModel):
@@ -122,6 +123,7 @@ class AlumnoMonitorEntry(BaseModel):
     nombre: str
     apellidos: str
     comision: str | None = None
+    email: str | None = None
     actividades: list[ActividadEstado]
 
 

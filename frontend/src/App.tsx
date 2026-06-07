@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { AppLayout } from "@/features/auth/components/AppLayout";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
@@ -8,6 +8,19 @@ import { ForgotPasswordPage } from "@/features/auth/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/features/auth/pages/ResetPasswordPage";
 import { DashboardPage } from "@/features/auth/pages/DashboardPage";
 import { NotFoundPage } from "@/features/auth/pages/NotFoundPage";
+
+import { ComisionPage } from "@/features/comision/pages/ComisionPage";
+import { ComisionLayout } from "@/features/comision/pages/ComisionLayout";
+import { ImportarPage } from "@/features/comision/pages/ImportarPage";
+import { UmbralPage } from "@/features/comision/pages/UmbralPage";
+import { AtrasadosPage } from "@/features/comision/pages/AtrasadosPage";
+import { RankingsPage } from "@/features/comision/pages/RankingsPage";
+import { ReportesPage } from "@/features/comision/pages/ReportesPage";
+import { ComunicacionesPage } from "@/features/comision/pages/ComunicacionesPage";
+
+import { MonitoresPage } from "@/features/monitores/pages/MonitoresPage";
+
+import { RequirePermission } from "@/features/auth/components/RequirePermission";
 
 export function App() {
   return (
@@ -24,7 +37,42 @@ export function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route index element={<DashboardPage />} />
-            {/* Future feature routes will be added here in C-22+C-23 */}
+
+            {/* Comisión routes */}
+            <Route
+              path="comision"
+              element={
+                <RequirePermission permission="calificaciones:importar">
+                  <ComisionPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="comision/:materiaId"
+              element={
+                <RequirePermission permission="calificaciones:importar">
+                  <ComisionLayout />
+                </RequirePermission>
+              }
+            >
+              <Route index element={<Navigate to="atrasados" replace />} />
+              <Route path="importar" element={<ImportarPage />} />
+              <Route path="umbral" element={<UmbralPage />} />
+              <Route path="atrasados" element={<AtrasadosPage />} />
+              <Route path="rankings" element={<RankingsPage />} />
+              <Route path="reportes" element={<ReportesPage />} />
+              <Route path="comunicaciones" element={<ComunicacionesPage />} />
+            </Route>
+
+            {/* Monitores route */}
+            <Route
+              path="monitores"
+              element={
+                <RequirePermission permission="atrasados:ver">
+                  <MonitoresPage />
+                </RequirePermission>
+              }
+            />
 
             {/* Catch-all inside protected area — shows 404 with layout */}
             <Route path="*" element={<NotFoundPage />} />

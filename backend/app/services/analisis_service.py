@@ -13,7 +13,10 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy import select
+
 from app.core.exceptions import BusinessError
+from app.models.usuario import Usuario
 from app.repositories.analisis_repository import AnalisisRepository
 
 UMBRAL_DEFAULT = 60
@@ -68,7 +71,9 @@ class AnalisisService:
             entry["apellidos"] = getattr(c, "_apellidos", "")
 
             if c.nota_numerica is not None:
-                if Decimal(str(c.nota_numerica)) < Decimal(str(umbral_pct)):
+                # nota_numerica es 0-10, umbral_pct es porcentaje 0-100
+                pct_obtenido = Decimal(str(c.nota_numerica)) * Decimal("10")
+                if pct_obtenido < Decimal(str(umbral_pct)):
                     entry["actividades_bajo_umbral"] += 1
             elif c.nota_textual is not None and umbral and umbral.valores_aprobatorios:
                 if c.nota_textual not in umbral.valores_aprobatorios:
@@ -222,7 +227,8 @@ class AnalisisService:
         for entry in notas:
             promedio = entry.get("promedio")
             if promedio is not None:
-                entry["aprobado"] = promedio >= umbral_pct
+                # promedio es 0-10, umbral_pct es porcentaje 0-100
+                entry["aprobado"] = (promedio * 10) >= umbral_pct
             else:
                 entry["aprobado"] = False
 
@@ -276,6 +282,19 @@ class AnalisisService:
             "total": len(alumnos),
         }
 
+    async def _resolve_domain_usuario_id(
+        self, auth_user_id: UUID
+    ) -> UUID | None:
+        """Resuelve auth ``users.id`` → domain ``usuario.id``."""
+        result = await self.session.execute(
+            select(Usuario.id).where(
+                Usuario.auth_user_id == auth_user_id,
+                Usuario.tenant_id == self.tenant_id,
+                Usuario.deleted_at.is_(None),
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def obtener_monitor_seguimiento(
         self,
         usuario_id: UUID,
@@ -285,8 +304,12 @@ class AnalisisService:
         fecha_hasta: datetime | None = None,
     ) -> dict:
         """Monitor de seguimiento para tutor/profesor (F2.8) o coordinacion/admin (F2.9)."""
+        # Resolver auth users.id → domain usuario.id
+        domain_id = await self._resolve_domain_usuario_id(usuario_id)
+        if domain_id is None:
+            return {"alumnos": [], "total": 0}
         # Obtener alumnos del usuario por sus asignaciones
-        alumno_ids = await self.repo.obtener_alumnos_por_asignacion(usuario_id)
+        alumno_ids = await self.repo.obtener_alumnos_por_asignacion(domain_id)
 
         if not alumno_ids:
             return {"alumnos": [], "total": 0}
@@ -303,7 +326,14 @@ class AnalisisService:
         from collections import defaultdict
 
         agrupados: dict[UUID, dict] = defaultdict(
-            lambda: {"alumno_id": None, "nombre": "", "apellidos": "", "actividades": []}
+            lambda: {
+                "alumno_id": None,
+                "nombre": "",
+                "apellidos": "",
+                "comision": None,
+                "email": None,
+                "actividades": [],
+            }
         )
         for row in rows:
             uid = row["alumno_id"]
@@ -313,12 +343,18 @@ class AnalisisService:
             entry["alumno_id"] = uid
             entry["nombre"] = row.get("nombre", "")
             entry["apellidos"] = row.get("apellidos", "")
+            # Estos campos son iguales para todas las filas del mismo alumno
+            if entry["comision"] is None:
+                entry["comision"] = row.get("comision")
+            if entry["email"] is None:
+                entry["email"] = row.get("email")
             entry["actividades"].append(
                 {
                     "actividad": row["actividad"],
                     "nota_numerica": row.get("nota_numerica"),
                     "nota_textual": row.get("nota_textual"),
                     "aprobado": row.get("aprobado"),
+                    "materia_nombre": row.get("materia_nombre"),
                 }
             )
 

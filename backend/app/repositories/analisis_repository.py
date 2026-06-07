@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.asignacion import Asignacion
 from app.models.calificacion import Calificacion
 from app.models.entrada_padron import EntradaPadron
+from app.models.materia import Materia
 from app.models.umbral_materia import UmbralMateria
 from app.models.version_padron import VersionPadron
 from app.repositories.base import BaseRepository
@@ -474,6 +475,9 @@ class AnalisisRepository(BaseRepository[Calificacion]):
                 EntradaPadron.usuario_id,
                 EntradaPadron.nombre,
                 EntradaPadron.apellidos,
+                EntradaPadron.comision,
+                EntradaPadron.email,
+                Materia.nombre.label("materia_nombre"),
                 self.model.actividad,
                 self.model.nota_numerica,
                 self.model.nota_textual,
@@ -481,6 +485,7 @@ class AnalisisRepository(BaseRepository[Calificacion]):
             )
             .select_from(self.model)
             .join(EntradaPadron, self.model.entrada_padron_id == EntradaPadron.id)
+            .join(Materia, self.model.materia_id == Materia.id)
             .where(base.whereclause)  # type: ignore[arg-type]
             .order_by(EntradaPadron.nombre, self.model.actividad)
         )
@@ -491,6 +496,9 @@ class AnalisisRepository(BaseRepository[Calificacion]):
                 "alumno_id": row.usuario_id,
                 "nombre": row.nombre,
                 "apellidos": row.apellidos,
+                "email": row.email,
+                "comision": row.comision,
+                "materia_nombre": row.materia_nombre,
                 "actividad": row.actividad,
                 "nota_numerica": float(row.nota_numerica) if row.nota_numerica else None,
                 "nota_textual": row.nota_textual,

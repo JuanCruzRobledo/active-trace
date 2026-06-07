@@ -7,9 +7,10 @@ Crea (si no existen):
   • admin@trace.dev / Admin123456!  (roles: ADMIN, PROFESOR)
   • target@test.com  / Target123456! (rol: PROFESOR)
   • admin2@test.com  / Admin123456!  (rol: ADMIN)
-  • Estructura académica: carrera, materia, cohorte
-  • Asignación del profesor a la materia + umbral
-  • 3 alumnos (juan, maria, carlos) con calificaciones
+  • Estructura académica: carrera, 3 materias, cohorte
+  • Asignaciones: target@test.com → AM-I, admin@trace.dev → AM-I, FIS-I, PRO-I
+  • Umbrales para todas las asignaciones
+  • 3 alumnos (juan, maria, carlos) con calificaciones en las 3 materias
   • Slot recurrente + 4 instancias de encuentro
   • 1 guardia de ejemplo
 
@@ -389,9 +390,17 @@ async def ensure_carrera(session) -> UUID:
     return cid
 
 
-async def ensure_materia(session, carrera_id: UUID) -> UUID:
-    """Crea una materia de prueba si no existe."""
-    codigo = "AM-I"
+# ── Materias del seed ─────────────────────────────────────────────────
+
+MATERIAS_SEED: list[tuple[str, str]] = [
+    ("AM-I", "Análisis Matemático I"),
+    ("FIS-I", "Física I"),
+    ("PRO-I", "Programación I"),
+]
+
+
+async def ensure_materia(session, carrera_id: UUID, codigo: str, nombre: str) -> UUID:
+    """Crea una materia si no existe."""
     result = await session.execute(
         text("SELECT id FROM materia WHERE codigo = :cod AND tenant_id = :tid"),
         {"cod": codigo, "tid": DEV_TENANT_ID},
@@ -411,10 +420,10 @@ async def ensure_materia(session, carrera_id: UUID) -> UUID:
             "id": mid,
             "tid": DEV_TENANT_ID,
             "cod": codigo,
-            "nom": "Análisis Matemático I",
+            "nom": nombre,
         },
     )
-    print(f"  [+] Materia {codigo} creada")
+    print(f"  [+] Materia {codigo} — {nombre} creada")
     return mid
 
 
@@ -487,13 +496,14 @@ async def ensure_asignacion_profesor(
 async def ensure_umbral(
     session, asignacion_id: UUID, materia_id: UUID
 ) -> None:
-    """Crea umbral de aprobación si no existe."""
+    """Crea umbral de aprobación si no existe (por materia + asignacion)."""
     result = await session.execute(
         text(
             "SELECT id FROM umbral_materia "
-            "WHERE materia_id = :mid AND tenant_id = :tid AND deleted_at IS NULL"
+            "WHERE materia_id = :mid AND asignacion_id = :aid "
+            "AND tenant_id = :tid AND deleted_at IS NULL"
         ),
-        {"mid": materia_id, "tid": DEV_TENANT_ID},
+        {"mid": materia_id, "aid": asignacion_id, "tid": DEV_TENANT_ID},
     )
     if result.fetchone() is not None:
         print("  [~] Umbral de materia ya existe")
@@ -875,24 +885,51 @@ async def main() -> None:
         # ── 5. Estructura académica ──────────────────────────────────
         print()
         carrera_id = await ensure_carrera(session)
-        materia_id = await ensure_materia(session, carrera_id)
         cohorte_id = await ensure_cohorte(session, carrera_id)
 
-        # ── 6. Asignación profesor + umbral ──────────────────────────
-        print()
-        # Buscar UUID del profesor en tabla `usuario` (FK de asignacion)
-        prof_result = await session.execute(
+        # Crear todas las materias
+        materia_ids: dict[str, UUID] = {}
+        for codigo, nombre in MATERIAS_SEED:
+            mid = await ensure_materia(session, carrera_id, codigo, nombre)
+            materia_ids[codigo] = mid
+
+        # Obtener UUID de la tabla `usuario` para target y admin
+        target_usuario = await session.execute(
             text("SELECT id FROM usuario WHERE auth_user_id = :auid"),
             {"auid": main_user_ids.get("target@test.com")},
         )
-        prof_row = prof_result.fetchone()
-        if prof_row:
-            asignacion_id = await ensure_asignacion_profesor(
-                session, materia_id, prof_row[0]
+        target_usuario_row = target_usuario.fetchone()
+
+        admin_usuario = await session.execute(
+            text("SELECT id FROM usuario WHERE auth_user_id = :auid"),
+            {"auid": main_user_ids.get("admin@trace.dev")},
+        )
+        admin_usuario_row = admin_usuario.fetchone()
+
+        # ── 6. Asignaciones profesor + umbrales ──────────────────────
+        print()
+        target_asignacion_id: UUID | None = None
+        admin_asignaciones: dict[str, UUID] = {}  # materia_codigo -> asignacion_id
+
+        # target@test.com → AM-I (mantener compatibilidad)
+        if target_usuario_row:
+            target_asignacion_id = await ensure_asignacion_profesor(
+                session, materia_ids["AM-I"], target_usuario_row[0]
             )
-            await ensure_umbral(session, asignacion_id, materia_id)
+            await ensure_umbral(session, target_asignacion_id, materia_ids["AM-I"])
         else:
-            print("  [!] No se encontró target@test.com, saltando asignación profesor")
+            print("  [!] No se encontró target@test.com, saltando asignación")
+
+        # admin@trace.dev → todas las materias
+        if admin_usuario_row:
+            for codigo in ("AM-I", "FIS-I", "PRO-I"):
+                aid = await ensure_asignacion_profesor(
+                    session, materia_ids[codigo], admin_usuario_row[0]
+                )
+                admin_asignaciones[codigo] = aid
+                await ensure_umbral(session, aid, materia_ids[codigo])
+        else:
+            print("  [!] No se encontró admin@trace.dev, saltando asignaciones admin")
 
         # ── 7. Alumnos ───────────────────────────────────────────────
         print()
@@ -909,58 +946,72 @@ async def main() -> None:
                 "regional": alumno["regional"],
             })
 
-        # ── 8. Versión padron + entradas ─────────────────────────────
+        # ── 8. Versión padron + entradas (por cada materia) ──────────
         print()
-        if prof_row:
-            version_id = await ensure_version_padron(
-                session, materia_id, cohorte_id, prof_row[0]
-            )
-        else:
-            # fallback: usar admin como cargado_por
-            admin_result = await session.execute(
-                text("SELECT id FROM users WHERE email = 'admin@trace.dev'"),
-            )
-            admin_row = admin_result.fetchone()
-            version_id = await ensure_version_padron(
-                session, materia_id, cohorte_id, admin_row[0]
-            )
+        cargado_por_id = (
+            target_usuario_row[0]
+            if target_usuario_row
+            else admin_usuario_row[0] if admin_usuario_row else None
+        )
 
-        entradas: list[dict] = []
-        for au in alumno_usuarios:
-            eid = await ensure_entrada_padron(
-                session,
-                version_id=version_id,
-                usuario_id=au["usuario_id"],
-                nombre=au["nombre"],
-                apellidos=au["apellidos"],
-                email=au["email"],
-                comision=au["comision"],
-                regional=au["regional"],
-            )
-            entradas.append({
-                "entrada_id": eid,
-                "usuario_id": au["usuario_id"],
-                "nombre": au["nombre"],
-                "apellidos": au["apellidos"],
-            })
+        entradas_por_materia: dict[str, list[dict]] = {}
 
-        # ── 9. Calificaciones ────────────────────────────────────────
+        for codigo in ("AM-I", "FIS-I", "PRO-I"):
+            mid = materia_ids[codigo]
+            if cargado_por_id is None:
+                admin_result = await session.execute(
+                    text("SELECT id FROM users WHERE email = 'admin@trace.dev'"),
+                )
+                admin_row = admin_result.fetchone()
+                version_id = await ensure_version_padron(
+                    session, mid, cohorte_id, admin_row[0]
+                )
+            else:
+                version_id = await ensure_version_padron(
+                    session, mid, cohorte_id, cargado_por_id
+                )
+
+            entradas_materia: list[dict] = []
+            for au in alumno_usuarios:
+                eid = await ensure_entrada_padron(
+                    session,
+                    version_id=version_id,
+                    usuario_id=au["usuario_id"],
+                    nombre=au["nombre"],
+                    apellidos=au["apellidos"],
+                    email=au["email"],
+                    comision=au["comision"],
+                    regional=au["regional"],
+                )
+                entradas_materia.append({
+                    "entrada_id": eid,
+                    "usuario_id": au["usuario_id"],
+                    "nombre": au["nombre"],
+                    "apellidos": au["apellidos"],
+                })
+
+            entradas_por_materia[codigo] = entradas_materia
+
+        # ── 9. Calificaciones (por cada materia) ─────────────────────
         print()
-        await ensure_calificaciones(session, materia_id, entradas)
+        for codigo in ("AM-I", "FIS-I", "PRO-I"):
+            await ensure_calificaciones(
+                session, materia_ids[codigo], entradas_por_materia[codigo]
+            )
 
-        # ── 10. Encuentros ───────────────────────────────────────────
+        # ── 10. Encuentros (solo para AM-I, materia de referencia) ─────
         print()
         slot_id = await ensure_slot_recurrente(
-            session, materia_id,
-            asignacion_id=asignacion_id if prof_row else None,
+            session, materia_ids["AM-I"],
+            asignacion_id=target_asignacion_id if target_usuario_row else None,
         )
-        await ensure_instancias(session, slot_id, materia_id)
+        await ensure_instancias(session, slot_id, materia_ids["AM-I"])
 
-        # ── 11. Guardias ─────────────────────────────────────────────
+        # ── 11. Guardias (solo para AM-I) ────────────────────────────
         print()
         await ensure_guardia(
-            session, materia_id, carrera_id, cohorte_id,
-            asignacion_id=asignacion_id if prof_row else None,
+            session, materia_ids["AM-I"], carrera_id, cohorte_id,
+            asignacion_id=target_asignacion_id if target_usuario_row else None,
         )
 
         # ── Commit ───────────────────────────────────────────────────
@@ -969,12 +1020,14 @@ async def main() -> None:
     await close_engine()
 
     total_usuarios = len(USERS) + len(ALUMNOS)
+    total_entradas = sum(len(e) for e in entradas_por_materia.values())
     print(f"\n[OK] Seed completado.")
     print(f"  • {total_usuarios} usuarios creados")
     print(f"  • {len(PERMISOS)} permisos + asignación a roles")
-    print(f"  • 1 carrera, 1 materia, 1 cohorte")
-    print(f"  • {len(entradas)} entradas de padrón")
-    print(f"  • Calificaciones de prueba")
+    print(f"  • 1 carrera, {len(MATERIAS_SEED)} materias, 1 cohorte")
+    print(f"  • {total_entradas} entradas de padrón ({len(MATERIAS_SEED)} materias)")
+    print(f"  • Calificaciones de prueba en {len(MATERIAS_SEED)} materias")
+    print(f"  • admin@trace.dev asignado a las {len(MATERIAS_SEED)} materias (PROFESOR)")
     print(f"  • Slot recurrente + 4 instancias de encuentro")
     print(f"  • 1 guardia de ejemplo")
     print()

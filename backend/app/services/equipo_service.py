@@ -117,6 +117,27 @@ class EquipoService:
 
     # ── Mis equipos ────────────────────────────────────────────────────
 
+    async def _resolve_domain_usuario_id(
+        self, auth_user_id: UUID
+    ) -> UUID | None:
+        """Resuelve auth ``users.id`` → domain ``usuario.id``.
+
+        El JWT transporta el ID de la tabla auth ``users``, pero las
+        asignaciones referencian la tabla de dominio ``usuario``.
+        """
+        from sqlalchemy import select
+
+        from app.models.usuario import Usuario
+
+        result = await self.session.execute(
+            select(Usuario.id).where(
+                Usuario.auth_user_id == auth_user_id,
+                Usuario.tenant_id == self.tenant_id,
+                Usuario.deleted_at.is_(None),
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def mis_equipos(
         self,
         usuario_id: UUID,
@@ -125,13 +146,16 @@ class EquipoService:
         """Retorna las asignaciones del usuario con nombres de contexto.
 
         Args:
-            usuario_id: UUID del usuario.
+            usuario_id: UUID del usuario (auth ``users.id``).
             filtros: Filtros adicionales (materia_id, carrera_id, etc.).
 
         Returns:
             Lista de dicts con datos de asignacion + nombres.
         """
-        asignaciones = await self.repo.list_by_usuario(usuario_id)
+        domain_id = await self._resolve_domain_usuario_id(usuario_id)
+        if domain_id is None:
+            return []
+        asignaciones = await self.repo.list_by_usuario(domain_id)
         materias, carreras, cohortes = await self._resolve_nombres_contexto(asignaciones)
 
         result = []
