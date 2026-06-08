@@ -43,6 +43,25 @@ import { TareasAdminPage } from "@/features/tareas/pages/TareasAdminPage";
 
 import { EncuentrosAdminPage } from "@/features/encuentros/pages/EncuentrosAdminPage";
 
+// ── Liquidaciones ────────────────────────────────────────────────────────────
+import { LiquidacionPeriodoPage } from "@/features/liquidaciones/pages/LiquidacionPeriodoPage";
+import { HistorialLiquidacionesPage } from "@/features/liquidaciones/pages/HistorialLiquidacionesPage";
+import { GrillaSalarialPage } from "@/features/liquidaciones/pages/GrillaSalarialPage";
+import { FacturasPage } from "@/features/liquidaciones/pages/FacturasPage";
+
+// ── Estructura Académica ──────────────────────────────────────────────────────
+import { CarrerasPage } from "@/features/estructura-academica/pages/CarrerasPage";
+import { CohortesPage } from "@/features/estructura-academica/pages/CohortesPage";
+import { MateriasPage } from "@/features/estructura-academica/pages/MateriasPage";
+
+// ── Usuarios Tenant ───────────────────────────────────────────────────────────
+import { UsuariosListPage } from "@/features/usuarios-tenant/pages/UsuariosListPage";
+import { UsuarioFormPage } from "@/features/usuarios-tenant/pages/UsuarioFormPage";
+
+// ── Auditoría ─────────────────────────────────────────────────────────────────
+import { AuditoriaPanelPage } from "@/features/auditoria/pages/AuditoriaPanelPage";
+import { LogAuditoriaPage } from "@/features/auditoria/pages/LogAuditoriaPage";
+
 import { ColoquiosLayout } from "@/features/coloquios/pages/ColoquiosLayout";
 import { ColoquiosPanelPage } from "@/features/coloquios/pages/ColoquiosPanelPage";
 import { ConvocatoriaListPage } from "@/features/coloquios/pages/ConvocatoriaListPage";
@@ -272,6 +291,118 @@ export function App() {
               element={
                 <RequirePermission permission="equipos:asignar">
                   <SetupCuatrimestreWizard />
+                </RequirePermission>
+              }
+            />
+
+            {/* ── Liquidaciones ────────────────────────────────────────── */}
+            <Route
+              path="liquidaciones"
+              element={
+                <RequirePermission permission="liquidaciones:ver">
+                  <LiquidacionPeriodoPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="liquidaciones/historial"
+              element={
+                <RequirePermission permission="liquidaciones:ver">
+                  <HistorialLiquidacionesPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="liquidaciones/grilla"
+              element={
+                <RequirePermission permission="liquidaciones:ver">
+                  <GrillaSalarialPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="liquidaciones/facturas"
+              element={
+                <RequirePermission permission="liquidaciones:ver">
+                  <FacturasPage />
+                </RequirePermission>
+              }
+            />
+
+            {/* ── Estructura Académica ─────────────────────────────────── */}
+            <Route
+              path="estructura"
+              element={
+                <RequirePermission permission="estructura:gestionar">
+                  <Navigate to="carreras" replace />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="estructura/carreras"
+              element={
+                <RequirePermission permission="estructura:gestionar">
+                  <CarrerasPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="estructura/cohortes"
+              element={
+                <RequirePermission permission="estructura:gestionar">
+                  <CohortesPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="estructura/materias"
+              element={
+                <RequirePermission permission="estructura:gestionar">
+                  <MateriasPage />
+                </RequirePermission>
+              }
+            />
+
+            {/* ── Usuarios ─────────────────────────────────────────────── */}
+            <Route
+              path="usuarios"
+              element={
+                <RequirePermission permission="usuarios:gestionar">
+                  <UsuariosListPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="usuarios/nuevo"
+              element={
+                <RequirePermission permission="usuarios:gestionar">
+                  <UsuarioFormPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="usuarios/:id/editar"
+              element={
+                <RequirePermission permission="usuarios:gestionar">
+                  <UsuarioFormPage />
+                </RequirePermission>
+              }
+            />
+
+            {/* ── Auditoría ────────────────────────────────────────────── */}
+            <Route
+              path="auditoria"
+              element={
+                <RequirePermission permission="auditoria:ver">
+                  <AuditoriaPanelPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="auditoria/log"
+              element={
+                <RequirePermission permission="auditoria:ver">
+                  <LogAuditoriaPage />
                 </RequirePermission>
               }
             />
