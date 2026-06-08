@@ -9,8 +9,8 @@ import type {
 } from "@/features/avisos/types/avisos";
 
 export async function fetchAvisos(filters?: AvisoFilters): Promise<AvisoResponse[]> {
-  const { data } = await api.get<AvisoResponse[]>("/avisos", { params: filters });
-  return data;
+  const { data } = await api.get<{items: AvisoResponse[], total: number}>("/avisos", { params: filters });
+  return data.items;
 }
 
 export async function fetchAvisoTimeline(): Promise<AvisoTimelineItem[]> {

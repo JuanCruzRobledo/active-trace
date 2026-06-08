@@ -34,6 +34,7 @@ from app.api.v1.routers.fechas_academicas import router as fechas_academicas_rou
 from app.api.v1.routers.liquidaciones import router as liquidaciones_router
 from app.api.v1.routers.perfil import router as perfil_router
 from app.api.v1.routers.inbox import router as inbox_router
+from app.api.v1.routers.auditoria import router as auditoria_router
 from app.core.config import Settings
 from app.core.database import close_engine, init_engine
 from app.core.logging import configure_json_logging
@@ -92,7 +93,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(liquidaciones_router)
     app.include_router(perfil_router)
     app.include_router(inbox_router)
-
+    app.include_router(auditoria_router)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],

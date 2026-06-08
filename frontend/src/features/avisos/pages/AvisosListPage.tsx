@@ -45,6 +45,8 @@ export function AvisosListPage() {
   const [filters, setFilters] = useState<AvisoFilters>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { data, isLoading, isError, error } = useAvisos(filters);
+  console.log("Data: ", data);
+  
   const eliminarAviso = useEliminarAviso();
 
   const columns: Column<AvisoResponse>[] = [

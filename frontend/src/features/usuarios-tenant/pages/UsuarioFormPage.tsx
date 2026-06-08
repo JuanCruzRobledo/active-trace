@@ -13,9 +13,6 @@ import {
 import type { UsuarioCreate } from "@/features/usuarios-tenant/types/usuarios";
 import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
 
-const ROL_OPTIONS = ["TUTOR", "NEXO", "COORDINADOR", "ADMIN", "SOPORTE"];
-const MODALIDAD_OPTIONS = ["presencial", "virtual", "mixta"];
-
 export function UsuarioFormPage() {
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
@@ -39,15 +36,16 @@ export function UsuarioFormPage() {
       reset({
         email: usuario.email,
         nombre: usuario.nombre,
-        apellido: usuario.apellido ?? "",
-        rol: usuario.rol ?? "",
-        modalidad: usuario.modalidad ?? "",
-        cuit: usuario.cuit ?? "",
-        condicion_fiscal: usuario.condicion_fiscal ?? "",
+        apellidos: usuario.apellidos ?? "",
+        dni: usuario.dni ?? "",
+        cuil: usuario.cuil ?? "",
         cbu: usuario.cbu ?? "",
-        alias: usuario.alias ?? "",
+        alias_cbu: usuario.alias_cbu ?? "",
         banco: usuario.banco ?? "",
         regional: usuario.regional ?? "",
+        legajo: usuario.legajo ?? "",
+        legajo_profesional: usuario.legajo_profesional ?? "",
+        facturador: usuario.facturador ?? "",
       });
     }
   }, [usuario, reset]);
@@ -61,10 +59,15 @@ export function UsuarioFormPage() {
   }
 
   async function onSubmit(data: UsuarioCreate) {
+    // Strip empty strings so optional fields stay null in backend
+    const clean = Object.fromEntries(
+      Object.entries(data).filter(([, v]) => v !== "")
+    ) as UsuarioCreate;
+
     if (isEditing && id) {
-      await actualizarMutation.mutateAsync({ id, payload: data });
+      await actualizarMutation.mutateAsync({ id, payload: clean });
     } else {
-      await crearMutation.mutateAsync(data);
+      await crearMutation.mutateAsync(clean);
     }
     navigate("/usuarios");
   }
@@ -92,10 +95,7 @@ export function UsuarioFormPage() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label
-                htmlFor="u-email"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="u-email" className="block text-sm font-medium text-gray-700">
                 Email
               </label>
               <input
@@ -105,17 +105,12 @@ export function UsuarioFormPage() {
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
               {errors.email && (
-                <p className="mt-1 text-xs text-red-600">
-                  {errors.email.message}
-                </p>
+                <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
               )}
             </div>
 
             <div>
-              <label
-                htmlFor="u-nombre"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="u-nombre" className="block text-sm font-medium text-gray-700">
                 Nombre
               </label>
               <input
@@ -124,78 +119,64 @@ export function UsuarioFormPage() {
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
               {errors.nombre && (
-                <p className="mt-1 text-xs text-red-600">
-                  {errors.nombre.message}
-                </p>
+                <p className="mt-1 text-xs text-red-600">{errors.nombre.message}</p>
               )}
             </div>
 
             <div>
-              <label
-                htmlFor="u-apellido"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="u-apellidos" className="block text-sm font-medium text-gray-700">
                 Apellido
               </label>
               <input
-                id="u-apellido"
-                {...register("apellido")}
+                id="u-apellidos"
+                {...register("apellidos")}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
+              {errors.apellidos && (
+                <p className="mt-1 text-xs text-red-600">{errors.apellidos.message}</p>
+              )}
             </div>
 
             <div>
-              <label
-                htmlFor="u-rol"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Rol
-              </label>
-              <select
-                id="u-rol"
-                {...register("rol")}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              >
-                <option value="">Sin rol</option>
-                {ROL_OPTIONS.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="u-modalidad"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Modalidad
-              </label>
-              <select
-                id="u-modalidad"
-                {...register("modalidad")}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              >
-                <option value="">Sin especificar</option>
-                {MODALIDAD_OPTIONS.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="u-regional"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="u-regional" className="block text-sm font-medium text-gray-700">
                 Regional
               </label>
               <input
                 id="u-regional"
                 {...register("regional")}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="u-legajo" className="block text-sm font-medium text-gray-700">
+                Legajo
+              </label>
+              <input
+                id="u-legajo"
+                {...register("legajo")}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="u-legajo-prof" className="block text-sm font-medium text-gray-700">
+                Legajo profesional
+              </label>
+              <input
+                id="u-legajo-prof"
+                {...register("legajo_profesional")}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label htmlFor="u-facturador" className="block text-sm font-medium text-gray-700">
+                Facturador
+              </label>
+              <input
+                id="u-facturador"
+                {...register("facturador")}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
@@ -208,29 +189,23 @@ export function UsuarioFormPage() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label
-                htmlFor="u-cuit"
-                className="block text-sm font-medium text-gray-700"
-              >
-                CUIT
+              <label htmlFor="u-dni" className="block text-sm font-medium text-gray-700">
+                DNI
               </label>
               <input
-                id="u-cuit"
-                {...register("cuit")}
+                id="u-dni"
+                {...register("dni")}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="u-condicion"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Condición fiscal
+              <label htmlFor="u-cuil" className="block text-sm font-medium text-gray-700">
+                CUIL
               </label>
               <input
-                id="u-condicion"
-                {...register("condicion_fiscal")}
+                id="u-cuil"
+                {...register("cuil")}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
@@ -243,10 +218,7 @@ export function UsuarioFormPage() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label
-                htmlFor="u-cbu"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="u-cbu" className="block text-sm font-medium text-gray-700">
                 CBU
               </label>
               <input
@@ -257,24 +229,18 @@ export function UsuarioFormPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="u-alias"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Alias
+              <label htmlFor="u-alias-cbu" className="block text-sm font-medium text-gray-700">
+                Alias CBU
               </label>
               <input
-                id="u-alias"
-                {...register("alias")}
+                id="u-alias-cbu"
+                {...register("alias_cbu")}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="u-banco"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="u-banco" className="block text-sm font-medium text-gray-700">
                 Banco
               </label>
               <input

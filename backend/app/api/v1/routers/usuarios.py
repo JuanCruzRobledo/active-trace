@@ -81,6 +81,7 @@ async def crear_usuario(
     db: AsyncSession = Depends(get_db),
 ) -> UsuarioResponse:
     """Crea un nuevo usuario en el tenant."""
+    print("DEBUG: Payload recibido en POST /api/admin/usuarios:", body)
     svc = _build_service(db, current_user.tenant_id)
     try:
         usuario = await svc.create(body)

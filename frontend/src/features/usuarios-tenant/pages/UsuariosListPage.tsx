@@ -8,23 +8,15 @@ import type { Usuario } from "@/features/usuarios-tenant/types/usuarios";
 import { FilterableTable } from "@/shared/components/FilterableTable";
 import type { Column } from "@/shared/components/FilterableTable";
 
-const ROL_OPTIONS = ["TUTOR", "NEXO", "COORDINADOR", "ADMIN", "SOPORTE"];
-
 export function UsuariosListPage() {
-  const [rolFilter, setRolFilter] = useState<string>("");
-  const [activoFilter, setActivoFilter] = useState<string>("");
+  const [estadoFilter, setEstadoFilter] = useState<string>("");
 
   const navigate = useNavigate();
   const { data: usuarios = [], isLoading, error } = useUsuariosTenant();
   const actualizarMutation = useActualizarUsuarioTenant();
 
-  console.log("USUARIOS: ",usuarios);
-  
-
   const filtered = usuarios.filter((u) => {
-    if (rolFilter && u.rol !== rolFilter) return false;
-    if (activoFilter === "activo" && u.activo === false) return false;
-    if (activoFilter === "inactivo" && u.activo !== false) return false;
+    if (estadoFilter && u.estado !== estadoFilter) return false;
     return true;
   });
 
@@ -36,7 +28,7 @@ export function UsuariosListPage() {
       label: "Nombre",
       sortable: true,
       render: (row) =>
-        `${row.nombre as string} ${(row.apellido as string) ?? ""}`.trim(),
+        `${row.nombre as string} ${(row.apellidos as string) ?? ""}`.trim(),
     },
     {
       key: "email",
@@ -44,28 +36,20 @@ export function UsuariosListPage() {
       sortable: true,
     },
     {
-      key: "rol",
-      label: "Rol",
-      sortable: true,
-      render: (row) =>
-        row.rol ? (
-          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-            {row.rol as string}
-          </span>
-        ) : (
-          "—"
-        ),
+      key: "regional",
+      label: "Regional",
+      render: (row) => (row.regional as string) ?? "—",
     },
     {
-      key: "modalidad",
-      label: "Modalidad",
-      render: (row) => (row.modalidad as string) ?? "—",
+      key: "legajo",
+      label: "Legajo",
+      render: (row) => (row.legajo as string) ?? "—",
     },
     {
-      key: "activo",
+      key: "estado",
       label: "Estado",
       render: (row) =>
-        row.activo !== false ? (
+        row.estado === "Activo" ? (
           <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
             Activo
           </span>
@@ -80,6 +64,7 @@ export function UsuariosListPage() {
       label: "Acciones",
       render: (row) => {
         const usuario = row as unknown as Usuario;
+        const esActivo = usuario.estado === "Activo";
         return (
           <div className="flex items-center gap-2">
             <button
@@ -94,12 +79,12 @@ export function UsuariosListPage() {
               onClick={() =>
                 actualizarMutation.mutate({
                   id: usuario.id,
-                  payload: { activo: usuario.activo === false },
+                  payload: { estado: esActivo ? "Inactivo" : "Activo" },
                 })
               }
               className="text-xs text-gray-500 underline hover:text-gray-700"
             >
-              {usuario.activo === false ? "Activar" : "Desactivar"}
+              {esActivo ? "Desactivar" : "Activar"}
             </button>
           </div>
         );
@@ -132,35 +117,19 @@ export function UsuariosListPage() {
         filters={
           <div className="flex flex-wrap items-center gap-3">
             <select
-              value={rolFilter}
-              onChange={(e) => setRolFilter(e.target.value)}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              <option value="">Todos los roles</option>
-              {ROL_OPTIONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={activoFilter}
-              onChange={(e) => setActivoFilter(e.target.value)}
+              value={estadoFilter}
+              onChange={(e) => setEstadoFilter(e.target.value)}
               className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">Todos los estados</option>
-              <option value="activo">Activos</option>
-              <option value="inactivo">Inactivos</option>
+              <option value="Activo">Activos</option>
+              <option value="Inactivo">Inactivos</option>
             </select>
 
-            {(rolFilter || activoFilter) && (
+            {estadoFilter && (
               <button
                 type="button"
-                onClick={() => {
-                  setRolFilter("");
-                  setActivoFilter("");
-                }}
+                onClick={() => setEstadoFilter("")}
                 className="text-sm text-gray-500 hover:text-gray-700"
               >
                 Limpiar
