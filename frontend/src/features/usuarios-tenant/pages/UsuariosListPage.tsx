@@ -18,6 +18,9 @@ export function UsuariosListPage() {
   const { data: usuarios = [], isLoading, error } = useUsuariosTenant();
   const actualizarMutation = useActualizarUsuarioTenant();
 
+  console.log("USUARIOS: ",usuarios);
+  
+
   const filtered = usuarios.filter((u) => {
     if (rolFilter && u.rol !== rolFilter) return false;
     if (activoFilter === "activo" && u.activo === false) return false;

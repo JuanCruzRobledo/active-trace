@@ -9,6 +9,7 @@ Uso en producción (Dockerfile):
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi import FastAPI
 
@@ -91,6 +92,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(liquidaciones_router)
     app.include_router(perfil_router)
     app.include_router(inbox_router)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     return app
 

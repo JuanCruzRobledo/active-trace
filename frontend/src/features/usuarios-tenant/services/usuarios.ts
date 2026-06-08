@@ -6,8 +6,10 @@ import type {
 } from "@/features/usuarios-tenant/types/usuarios";
 
 export async function fetchUsuarios(): Promise<Usuario[]> {
-  const { data } = await api.get<Usuario[]>("/admin/usuarios");
-  return data;
+  const { data } = await api.get<any>("/admin/usuarios");
+  console.log("Data: ", data.items);
+  
+  return data.items;
 }
 
 export async function fetchUsuarioById(id: string): Promise<Usuario> {

@@ -48,6 +48,8 @@ export function clear_tokens(): void {
 // ---------------------------------------------------------------------------
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
+console.log(API_BASE_URL);
+
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
