@@ -115,10 +115,10 @@ export function MateriasPage() {
     { key: "codigo", label: "Código", sortable: true },
     { key: "nombre", label: "Nombre", sortable: true },
     {
-      key: "activa",
+      key: "estado",
       label: "Estado",
       render: (row) =>
-        row.activa !== false ? (
+        row.estado !== "Inactiva" ? (
           <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
             Activa
           </span>
@@ -147,12 +147,12 @@ export function MateriasPage() {
               onClick={() =>
                 actualizarMutation.mutate({
                   id: materia.id,
-                  payload: { activa: materia.activa === false },
+                  payload: { estado: materia.estado === "Inactiva" ? "Activa" : "Inactiva" },
                 })
               }
               className="text-xs text-gray-500 underline hover:text-gray-700"
             >
-              {materia.activa === false ? "Activar" : "Desactivar"}
+              {materia.estado === "Inactiva" ? "Activar" : "Desactivar"}
             </button>
           </div>
         );
@@ -194,7 +194,7 @@ export function MateriasPage() {
             if (editTarget) {
               await actualizarMutation.mutateAsync({
                 id: editTarget.id,
-                payload: data,
+                payload: { nombre: data.nombre },
               });
             } else {
               await crearMutation.mutateAsync(data);

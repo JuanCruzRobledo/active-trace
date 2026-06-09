@@ -70,10 +70,11 @@ describe("AtrasadosPage", () => {
     expect(screen.getByText("1002")).toBeInTheDocument();
   });
 
-  it("shows filter inputs", () => {
+  it("shows filter input for nombre", () => {
     renderPage();
-    expect(screen.getByPlaceholderText("Filtrar por nombre")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Actividad")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Filtrar por nombre o apellido..."),
+    ).toBeInTheDocument();
   });
 
   it("shows empty state when no atrasados", () => {

@@ -115,10 +115,10 @@ export function CarrerasPage() {
     { key: "codigo", label: "Código", sortable: true },
     { key: "nombre", label: "Nombre", sortable: true },
     {
-      key: "activa",
+      key: "estado",
       label: "Estado",
       render: (row) =>
-        row.activa !== false ? (
+        row.estado !== "Inactiva" ? (
           <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
             Activa
           </span>
@@ -147,12 +147,12 @@ export function CarrerasPage() {
               onClick={() =>
                 actualizarMutation.mutate({
                   id: carrera.id,
-                  payload: { activa: carrera.activa === false },
+                  payload: { estado: carrera.estado === "Inactiva" ? "Activa" : "Inactiva" },
                 })
               }
               className="text-xs text-gray-500 underline hover:text-gray-700"
             >
-              {carrera.activa === false ? "Activar" : "Desactivar"}
+              {carrera.estado === "Inactiva" ? "Activar" : "Desactivar"}
             </button>
           </div>
         );
@@ -181,22 +181,31 @@ export function CarrerasPage() {
 
       {(showForm || editTarget) && (
         <CarreraForm
-          defaultValues={editTarget ?? undefined}
+          key={editTarget?.id ?? "new"}
+          defaultValues={
+            editTarget
+              ? { codigo: editTarget.codigo, nombre: editTarget.nombre }
+              : undefined
+          }
           onClose={() => {
             setShowForm(false);
             setEditTarget(null);
           }}
           onSubmit={async (data) => {
-            if (editTarget) {
-              await actualizarMutation.mutateAsync({
-                id: editTarget.id,
-                payload: data,
-              });
-            } else {
-              await crearMutation.mutateAsync(data);
+            try {
+              if (editTarget) {
+                await actualizarMutation.mutateAsync({
+                  id: editTarget.id,
+                  payload: { nombre: data.nombre },
+                });
+              } else {
+                await crearMutation.mutateAsync(data);
+              }
+              setShowForm(false);
+              setEditTarget(null);
+            } catch (err) {
+              console.error("Error al guardar carrera:", err);
             }
-            setShowForm(false);
-            setEditTarget(null);
           }}
           isPending={crearMutation.isPending || actualizarMutation.isPending}
         />

@@ -20,6 +20,7 @@ class AlumnoAtrasadoEntry(BaseModel):
     alumno_id: UUID
     nombre: str
     apellidos: str
+    legajo: str | None = None
     actividades_faltantes: int
     actividades_bajo_umbral: int
     comision: str | None = None

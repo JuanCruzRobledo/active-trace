@@ -12,8 +12,8 @@ function build_params(filters?: GuardiaFilters): Record<string, string> {
 }
 
 export async function fetchGuardias(filters?: GuardiaFilters): Promise<GuardiasResponse> {
-  const { data } = await api.get<Guardia[]>("/guardias", { params: build_params(filters) });
-  return { items: data, total: data.length };
+  const { data } = await api.get<GuardiasResponse>("/guardias", { params: build_params(filters) });
+  return data;
 }
 
 export async function crearGuardia(input: GuardiaCreate): Promise<Guardia> {

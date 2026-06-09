@@ -24,7 +24,10 @@ export function ComunicacionesPorDocentePanel({
     return <p className="text-sm text-red-600">{error}</p>;
   }
 
-  const sorted = [...data].sort((a, b) => b.cantidad - a.cantidad);
+  const totalComs = (d: ComunicacionPorDocente) =>
+    (d.Pendiente ?? 0) + (d.Enviando ?? 0) + (d.OK ?? 0) + (d.Fallido ?? 0) + (d.Cancelado ?? 0);
+
+  const sorted = [...data].sort((a, b) => totalComs(b) - totalComs(a));
 
   return (
     <div className="overflow-hidden rounded-lg border bg-white">
@@ -57,7 +60,7 @@ export function ComunicacionesPorDocentePanel({
                 )}
               </td>
               <td className="px-4 py-2 text-right font-semibold text-gray-900">
-                {d.cantidad}
+                {totalComs(d)}
               </td>
             </tr>
           ))}

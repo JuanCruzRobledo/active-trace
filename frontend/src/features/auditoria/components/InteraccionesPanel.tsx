@@ -24,7 +24,7 @@ export function InteraccionesPanel({
     return <p className="text-sm text-red-600">{error}</p>;
   }
 
-  const sorted = [...data].sort((a, b) => b.cantidad - a.cantidad);
+  const sorted = [...data].sort((a, b) => b.total - a.total);
 
   return (
     <div className="overflow-hidden rounded-lg border bg-white">
@@ -59,21 +59,21 @@ export function InteraccionesPanel({
               className="hover:bg-gray-50"
             >
               <td className="px-4 py-2 text-gray-700">
-                {d.nombre_usuario ?? (
+                {d.nombre ?? (
                   <code className="text-xs text-gray-500">
                     {d.usuario_id.slice(0, 8)}...
                   </code>
                 )}
               </td>
               <td className="px-4 py-2 text-gray-700">
-                {d.nombre_materia ?? (
+                {d.materia_nombre ?? (
                   <code className="text-xs text-gray-500">
                     {d.materia_id.slice(0, 8)}...
                   </code>
                 )}
               </td>
               <td className="px-4 py-2 text-right font-semibold text-gray-900">
-                {d.cantidad}
+                {d.total}
               </td>
             </tr>
           ))}

@@ -45,8 +45,8 @@ export function AvisoFormPage() {
           requiere_ack: avisoQuery.data.requiere_ack,
         }
       : {
-          alcance: "global",
-          severidad: "info",
+          alcance: "Global",
+          severidad: "Info",
           titulo: "",
           cuerpo: "",
           inicio_en: "",

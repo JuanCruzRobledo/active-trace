@@ -8,21 +8,24 @@ import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { useGuardias, useCrearGuardia, useActualizarGuardia } from "@/features/guardias/hooks/useGuardias";
 import type { Guardia, GuardiaCreate, GuardiaFilters } from "@/features/guardias/types/guardias";
 
-const estados = ["pendiente", "activa", "finalizada", "cancelada"];
+const estados = ["Pendiente", "Realizada", "Cancelada"];
 
 const columns: Column<Guardia>[] = [
-  { key: "fecha", label: "Fecha", sortable: true },
-  { key: "hora_inicio", label: "Inicio", sortable: true },
-  { key: "hora_fin", label: "Fin", sortable: true },
+  { key: "dia", label: "Día", sortable: true },
+  { key: "horario", label: "Horario", sortable: true },
+  {
+    key: "docente_nombre",
+    label: "Docente",
+    render: (row) => row.docente_nombre ?? <span className="text-gray-400">—</span>,
+  },
   {
     key: "estado",
     label: "Estado",
     sortable: true,
     render: (row) => (
       <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-        row.estado === "activa" ? "bg-green-100 text-green-800"
-        : row.estado === "pendiente" ? "bg-yellow-100 text-yellow-800"
-        : row.estado === "finalizada" ? "bg-blue-100 text-blue-800"
+        row.estado === "Realizada" ? "bg-green-100 text-green-800"
+        : row.estado === "Pendiente" ? "bg-yellow-100 text-yellow-800"
         : "bg-gray-100 text-gray-800"
       }`}>
         {row.estado}
@@ -43,16 +46,20 @@ export function GuardiasPage() {
   const actualizar_mutation = useActualizarGuardia();
 
   const form = useForm<GuardiaCreate>({
-    defaultValues: { fecha: "", hora_inicio: "", hora_fin: "", estado: "pendiente", comentarios: "" },
+    defaultValues: { dia: "", horario: "", comentarios: "" },
   });
 
   const items = data?.items ?? [];
 
   const handle_submit = form.handleSubmit(async (values) => {
     if (editing_id) {
-      await actualizar_mutation.mutateAsync({ id: editing_id, data: values });
+      await actualizar_mutation.mutateAsync({
+        id: editing_id,
+        data: { estado: values.estado, comentarios: values.comentarios },
+      });
     } else {
-      await crear_mutation.mutateAsync(values);
+      const { estado, ...crear_data } = values;
+      await crear_mutation.mutateAsync(crear_data);
     }
     form.reset();
     set_show_form(false);
@@ -61,7 +68,7 @@ export function GuardiasPage() {
 
   const handle_cancel = async () => {
     if (!cancel_id) return;
-    await actualizar_mutation.mutateAsync({ id: cancel_id, data: { estado: "cancelada" } });
+    await actualizar_mutation.mutateAsync({ id: cancel_id, data: { estado: "Cancelada" } });
     set_cancel_id(null);
   };
 
@@ -80,14 +87,19 @@ export function GuardiasPage() {
       {show_form && (
         <form onSubmit={handle_submit} className="rounded-lg border bg-white p-4 shadow-sm space-y-4">
           <div className="grid gap-4 sm:grid-cols-5">
-            <FormField label="Fecha" html_for="fecha" error={form.formState.errors.fecha?.message}>
-              <Input id="fecha" type="date" {...form.register("fecha", { required: true })} has_error={!!form.formState.errors.fecha} />
+            <FormField label="Día" html_for="dia" error={form.formState.errors.dia?.message}>
+              <select id="dia" {...form.register("dia", { required: true })} className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <option value="">Seleccioná un día</option>
+                <option value="Lunes">Lunes</option>
+                <option value="Martes">Martes</option>
+                <option value="Miércoles">Miércoles</option>
+                <option value="Jueves">Jueves</option>
+                <option value="Viernes">Viernes</option>
+                <option value="Sábado">Sábado</option>
+              </select>
             </FormField>
-            <FormField label="Inicio" html_for="hora_inicio" error={form.formState.errors.hora_inicio?.message}>
-              <Input id="hora_inicio" type="time" {...form.register("hora_inicio", { required: true })} has_error={!!form.formState.errors.hora_inicio} />
-            </FormField>
-            <FormField label="Fin" html_for="hora_fin" error={form.formState.errors.hora_fin?.message}>
-              <Input id="hora_fin" type="time" {...form.register("hora_fin", { required: true })} has_error={!!form.formState.errors.hora_fin} />
+            <FormField label="Horario" html_for="horario" error={form.formState.errors.horario?.message}>
+              <Input id="horario" type="text" placeholder="ej. 14:00–14:45" {...form.register("horario", { required: true })} has_error={!!form.formState.errors.horario} />
             </FormField>
             <FormField label="Estado" html_for="estado">
               <select id="estado" {...form.register("estado")} className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500">

@@ -267,8 +267,18 @@ def _calcular_estado_vigencia(a) -> str:
     from datetime import datetime, timezone
 
     now = datetime.now(timezone.utc)
-    if a.hasta is not None and a.hasta < now:
-        return "Vencida"
-    if a.desde > now:
-        return "Sin iniciar"
+    hasta = a.hasta
+    desde = a.desde
+
+    # Normalizar timezone: si el registro guardó naive, asumir UTC
+    if hasta is not None:
+        if hasta.tzinfo is None:
+            hasta = hasta.replace(tzinfo=timezone.utc)
+        if hasta < now:
+            return "Vencida"
+    if desde is not None:
+        if desde.tzinfo is None:
+            desde = desde.replace(tzinfo=timezone.utc)
+        if desde > now:
+            return "Sin iniciar"
     return "Vigente"

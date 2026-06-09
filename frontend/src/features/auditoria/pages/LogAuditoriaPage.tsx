@@ -14,34 +14,34 @@ export function LogAuditoriaPage() {
 
   const columns: Column<Record<string, unknown>>[] = [
     {
-      key: "created_at",
+      key: "fecha_hora",
       label: "Fecha/Hora",
       sortable: true,
       render: (row) =>
-        row.created_at
-          ? new Date(row.created_at as string).toLocaleString("es-AR")
+        row.fecha_hora
+          ? new Date(row.fecha_hora as string).toLocaleString("es-AR")
           : "—",
     },
     {
-      key: "usuario_id",
-      label: "Usuario (ID)",
+      key: "actor_nombre",
+      label: "Actor",
       render: (row) =>
-        row.usuario_id ? (
-          <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs">
-            {(row.usuario_id as string).slice(0, 8)}...
-          </code>
+        row.actor_nombre ? (
+          <span className="text-sm text-gray-900">
+            {row.actor_nombre as string}
+          </span>
         ) : (
           "—"
         ),
     },
     {
-      key: "materia_id",
-      label: "Materia (ID)",
+      key: "materia_nombre",
+      label: "Materia",
       render: (row) =>
-        row.materia_id ? (
-          <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs">
-            {(row.materia_id as string).slice(0, 8)}...
-          </code>
+        row.materia_nombre ? (
+          <span className="text-sm text-gray-700">
+            {row.materia_nombre as string}
+          </span>
         ) : (
           "—"
         ),
@@ -57,9 +57,9 @@ export function LogAuditoriaPage() {
       ),
     },
     {
-      key: "registros",
+      key: "filas_afectadas",
       label: "Registros",
-      render: (row) => (row.registros as number) ?? "—",
+      render: (row) => (row.filas_afectadas as number) ?? "—",
     },
     {
       key: "ip",

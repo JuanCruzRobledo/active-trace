@@ -46,11 +46,10 @@ export function AvisoFormBody({
             className={select_class}
             {...register("alcance")}
           >
-            <option value="global">Global</option>
-            <option value="carrera">Carrera</option>
-            <option value="cohorte">Cohorte</option>
-            <option value="materia">Materia</option>
-            <option value="rol">Rol</option>
+            <option value="Global">Global</option>
+            <option value="PorMateria">Por Materia</option>
+            <option value="PorCohorte">Por Cohorte</option>
+            <option value="PorRol">Por Rol</option>
           </select>
         </FormField>
 
@@ -64,24 +63,24 @@ export function AvisoFormBody({
             className={select_class}
             {...register("severidad")}
           >
-            <option value="info">Info</option>
-            <option value="warning">Warning</option>
-            <option value="critical">Critical</option>
+            <option value="Info">Info</option>
+            <option value="Advertencia">Advertencia</option>
+            <option value="Crítico">Crítico</option>
           </select>
         </FormField>
       </div>
 
-      {alcance === "materia" && (
+      {alcance === "PorMateria" && (
         <FormField label="ID de Materia" html_for="materia_id" error={errors.materia_id?.message}>
           <Input id="materia_id" placeholder="UUID de la materia" {...register("materia_id")} />
         </FormField>
       )}
-      {alcance === "cohorte" && (
+      {alcance === "PorCohorte" && (
         <FormField label="ID de Cohorte" html_for="cohorte_id" error={errors.cohorte_id?.message}>
           <Input id="cohorte_id" placeholder="UUID del cohorte" {...register("cohorte_id")} />
         </FormField>
       )}
-      {alcance === "rol" && (
+      {alcance === "PorRol" && (
         <FormField label="Rol destino" html_for="rol_destino" error={errors.rol_destino?.message}>
           <select id="rol_destino" className={select_class} {...register("rol_destino")}>
             <option value="">Seleccionar rol</option>

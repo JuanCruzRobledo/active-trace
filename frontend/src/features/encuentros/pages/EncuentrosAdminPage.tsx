@@ -35,14 +35,9 @@ export function EncuentrosAdminPage() {
       },
     },
     {
-      key: "hora_inicio",
-      label: "Inicio",
-      render: (row) => (row.hora_inicio as string) ?? "-",
-    },
-    {
-      key: "hora_fin",
-      label: "Fin",
-      render: (row) => (row.hora_fin as string) ?? "-",
+      key: "hora",
+      label: "Horario",
+      render: (row) => (row.hora as string) ?? "-",
     },
     {
       key: "estado",

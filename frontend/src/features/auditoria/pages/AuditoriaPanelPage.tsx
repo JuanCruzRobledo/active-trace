@@ -165,15 +165,15 @@ export function AuditoriaPanelPage() {
                   {ultimas.map((u) => (
                     <tr key={u.id} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-xs text-gray-500">
-                        {u.created_at
-                          ? new Date(u.created_at).toLocaleString("es-AR")
+                        {u.fecha_hora
+                          ? new Date(u.fecha_hora).toLocaleString("es-AR")
                           : "—"}
                       </td>
                       <td className="px-4 py-2 font-mono text-xs text-gray-900">
                         {u.accion}
                       </td>
                       <td className="px-4 py-2 text-gray-700">
-                        {u.registros ?? "—"}
+                        {u.detalle ? JSON.stringify(u.detalle).slice(0, 60) : "—"}
                       </td>
                       <td className="px-4 py-2 text-xs text-gray-500">
                         {u.ip ?? "—"}

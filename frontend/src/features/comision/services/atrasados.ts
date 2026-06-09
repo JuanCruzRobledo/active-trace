@@ -29,6 +29,7 @@ interface BackendAtrasadosResponse {
     alumno_id: string;
     nombre: string;
     apellidos: string;
+    legajo: string | null;
     actividades_faltantes: number;
     actividades_bajo_umbral: number;
     comision: string | null;
@@ -39,16 +40,11 @@ interface BackendAtrasadosResponse {
 
 export async function getAtrasados(
   materiaId: string,
-  filters?: AtrasadosFilters,
+  _filters?: AtrasadosFilters,
 ): Promise<AtrasadosResponse> {
-  const params: Record<string, string> = {};
-  if (filters?.nombre) params.nombre = filters.nombre;
-  if (filters?.actividad) params.actividad = filters.actividad;
-  if (filters?.nota_min !== undefined) params.nota_min = String(filters.nota_min);
-  if (filters?.nota_max !== undefined) params.nota_max = String(filters.nota_max);
   const { data } = await api.get<BackendAtrasadosResponse>(
     `/analisis/atrasados`,
-    { params: { ...params, materia_id: materiaId } },
+    { params: { materia_id: materiaId } },
   );
 
   const items: AtrasadoRow[] = data.alumnos_atrasados.map((entry) => {
@@ -61,7 +57,7 @@ export async function getAtrasados(
     return {
       alumno_id: entry.alumno_id,
       alumno: `${entry.nombre} ${entry.apellidos}`,
-      legajo: "", // el backend no expone legajo todavía
+      legajo: entry.legajo ?? "—",
       actividades_faltantes: entry.actividades_faltantes,
       actividades_bajo_umbral: entry.actividades_bajo_umbral,
       nota_actual: null, // el backend no expone nota_actual todavía

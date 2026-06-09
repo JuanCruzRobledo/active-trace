@@ -110,6 +110,7 @@ class AnalisisService:
                         "alumno_id": alumno_data.get("usuario_id"),
                         "nombre": alumno_data.get("nombre", info["nombre"]),
                         "apellidos": alumno_data.get("apellidos", info["apellidos"]),
+                        "legajo": alumno_data.get("legajo"),
                         "actividades_faltantes": info["actividades_faltantes"],
                         "actividades_bajo_umbral": info["actividades_bajo_umbral"],
                         "comision": alumno_data.get("comision"),
@@ -140,6 +141,8 @@ class AnalisisService:
         from app.models.entrada_padron import EntradaPadron
         from app.models.version_padron import VersionPadron
 
+        from app.models.usuario import Usuario
+
         filters = [
             EntradaPadron.id.in_(entrada_padron_ids),
             EntradaPadron.tenant_id == self.tenant_id,
@@ -155,9 +158,11 @@ class AnalisisService:
                 EntradaPadron.nombre,
                 EntradaPadron.apellidos,
                 EntradaPadron.comision,
+                Usuario.legajo,
             )
             .select_from(EntradaPadron)
             .join(VersionPadron, EntradaPadron.version_id == VersionPadron.id)
+            .outerjoin(Usuario, EntradaPadron.usuario_id == Usuario.id)
             .where(
                 and_(
                     *filters,
@@ -178,6 +183,7 @@ class AnalisisService:
                 "nombre": row.nombre,
                 "apellidos": row.apellidos,
                 "comision": row.comision,
+                "legajo": row.legajo,
             }
             for row in rows
         }

@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const AvisoCreateSchema = z.object({
-  alcance: z.enum(["global", "carrera", "cohorte", "materia", "rol"]),
+  alcance: z.enum(["Global", "PorMateria", "PorCohorte", "PorRol"]),
   materia_id: z.string().uuid().optional(),
   cohorte_id: z.string().uuid().optional(),
   rol_destino: z.string().optional(),
-  severidad: z.enum(["info", "warning", "critical"]),
+  severidad: z.enum(["Info", "Advertencia", "Crítico"]),
   titulo: z.string().min(1).max(200),
   cuerpo: z.string().min(1),
   inicio_en: z.string(),
@@ -17,11 +17,11 @@ export const AvisoCreateSchema = z.object({
 export type AvisoCreate = z.infer<typeof AvisoCreateSchema>;
 
 export const AvisoUpdateSchema = z.object({
-  alcance: z.enum(["global", "carrera", "cohorte", "materia", "rol"]).optional(),
+  alcance: z.enum(["Global", "PorMateria", "PorCohorte", "PorRol"]).optional(),
   materia_id: z.string().uuid().optional(),
   cohorte_id: z.string().uuid().optional(),
   rol_destino: z.string().optional(),
-  severidad: z.enum(["info", "warning", "critical"]).optional(),
+  severidad: z.enum(["Info", "Advertencia", "Crítico"]).optional(),
   titulo: z.string().min(1).max(200).optional(),
   cuerpo: z.string().min(1).optional(),
   inicio_en: z.string().optional(),

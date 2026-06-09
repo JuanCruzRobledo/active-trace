@@ -7,7 +7,7 @@ export const CarreraSchema = z.object({
   tenant_id: z.string().uuid(),
   codigo: z.string(),
   nombre: z.string(),
-  activa: z.boolean().optional(),
+  estado: z.string().optional(),
   created_at: z.string().nullable().optional(),
   updated_at: z.string().nullable().optional(),
 }).passthrough();
@@ -17,14 +17,14 @@ export type Carrera = z.infer<typeof CarreraSchema>;
 export const CarreraCreateSchema = z.object({
   codigo: z.string().min(1, "El código es obligatorio"),
   nombre: z.string().min(1, "El nombre es obligatorio"),
+  estado: z.string().optional(),
 }).strict();
 
 export type CarreraCreate = z.infer<typeof CarreraCreateSchema>;
 
 export const CarreraUpdateSchema = z.object({
-  codigo: z.string().min(1).optional(),
   nombre: z.string().min(1).optional(),
-  activa: z.boolean().optional(),
+  estado: z.string().optional(),
 }).strict();
 
 export type CarreraUpdate = z.infer<typeof CarreraUpdateSchema>;
@@ -34,11 +34,12 @@ export type CarreraUpdate = z.infer<typeof CarreraUpdateSchema>;
 export const CohorteSchema = z.object({
   id: z.string().uuid(),
   tenant_id: z.string().uuid(),
+  carrera_id: z.string().nullable().optional(),
   nombre: z.string(),
   anio: z.number().int().nullable().optional(),
-  vigencia_desde: z.string().nullable().optional(),
-  vigencia_hasta: z.string().nullable().optional(),
-  activa: z.boolean().optional(),
+  vig_desde: z.string().nullable().optional(),
+  vig_hasta: z.string().nullable().optional(),
+  estado: z.string().optional(),
   created_at: z.string().nullable().optional(),
   updated_at: z.string().nullable().optional(),
 }).passthrough();
@@ -46,20 +47,21 @@ export const CohorteSchema = z.object({
 export type Cohorte = z.infer<typeof CohorteSchema>;
 
 export const CohorteCreateSchema = z.object({
+  carrera_id: z.string().min(1, "La carrera es obligatoria"),
   nombre: z.string().min(1, "El nombre es obligatorio"),
-  anio: z.number().int().optional(),
-  vigencia_desde: z.string().optional(),
-  vigencia_hasta: z.string().optional(),
+  anio: z.number().int(),
+  vig_desde: z.string().min(1, "La fecha de inicio es obligatoria"),
+  vig_hasta: z.string().optional(),
+  estado: z.string().optional(),
 }).strict();
 
 export type CohorteCreate = z.infer<typeof CohorteCreateSchema>;
 
 export const CohorteUpdateSchema = z.object({
   nombre: z.string().min(1).optional(),
-  anio: z.number().int().optional(),
-  vigencia_desde: z.string().optional(),
-  vigencia_hasta: z.string().optional(),
-  activa: z.boolean().optional(),
+  vig_desde: z.string().optional(),
+  vig_hasta: z.string().optional(),
+  estado: z.string().optional(),
 }).strict();
 
 export type CohorteUpdate = z.infer<typeof CohorteUpdateSchema>;
@@ -72,7 +74,7 @@ export const MateriaSchema = z.object({
   codigo: z.string(),
   nombre: z.string(),
   carrera_id: z.string().uuid().nullable().optional(),
-  activa: z.boolean().optional(),
+  estado: z.string().optional(),
   created_at: z.string().nullable().optional(),
   updated_at: z.string().nullable().optional(),
 }).passthrough();
@@ -82,16 +84,14 @@ export type Materia = z.infer<typeof MateriaSchema>;
 export const MateriaCreateSchema = z.object({
   codigo: z.string().min(1, "El código es obligatorio"),
   nombre: z.string().min(1, "El nombre es obligatorio"),
-  carrera_id: z.string().uuid().optional(),
+  estado: z.string().optional(),
 }).strict();
 
 export type MateriaCreate = z.infer<typeof MateriaCreateSchema>;
 
 export const MateriaUpdateSchema = z.object({
-  codigo: z.string().min(1).optional(),
   nombre: z.string().min(1).optional(),
-  carrera_id: z.string().uuid().nullable().optional(),
-  activa: z.boolean().optional(),
+  estado: z.string().optional(),
 }).strict();
 
 export type MateriaUpdate = z.infer<typeof MateriaUpdateSchema>;

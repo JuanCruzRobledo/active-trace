@@ -34,7 +34,12 @@ export function ClonarEquipoPage() {
   });
 
   const onSubmit = async (data: ClonarEquipoRequest) => {
-    await clonarEquipo.mutateAsync(data);
+    // Convertir string vacio a null para que Pydantic no falle con datetime
+    const payload = {
+      ...data,
+      destino_hasta: data.destino_hasta || undefined,
+    };
+    await clonarEquipo.mutateAsync(payload);
     reset();
   };
 
@@ -121,6 +126,14 @@ export function ClonarEquipoPage() {
             Equipo clonado exitosamente: {clonarEquipo.data.creadas} asignaciones
             creadas de &ldquo;{clonarEquipo.data.origen}&rdquo; a
             &ldquo;{clonarEquipo.data.destino}&rdquo;
+          </div>
+        )}
+
+        {clonarEquipo.isError && (
+          <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            {clonarEquipo.error instanceof Error
+              ? clonarEquipo.error.message
+              : "Error al clonar el equipo. Verificá que el contexto origen tenga asignaciones."}
           </div>
         )}
       </form>

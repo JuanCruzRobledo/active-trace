@@ -26,7 +26,7 @@ export function AccionesPorDiaChart({
     );
   }
 
-  const max = Math.max(...data.map((d) => d.cantidad), 1);
+  const max = Math.max(...data.map((d) => d.total), 1);
 
   return (
     <div className="space-y-2" aria-label="Acciones por día">
@@ -39,14 +39,14 @@ export function AccionesPorDiaChart({
           <div className="flex-1 rounded-full bg-gray-100">
             <div
               className="h-4 rounded-full bg-brand-500"
-              style={{ width: `${(d.cantidad / max) * 100}%` }}
+              style={{ width: `${(d.total / max) * 100}%` }}
               role="progressbar"
-              aria-valuenow={d.cantidad}
+              aria-valuenow={d.total}
               aria-valuemax={max}
             />
           </div>
           <span className="w-10 text-right text-xs font-semibold text-gray-700">
-            {d.cantidad}
+            {d.total}
           </span>
         </div>
       ))}

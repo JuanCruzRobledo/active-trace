@@ -89,7 +89,7 @@ function CohorteForm({
           <input
             id="coh-desde"
             type="date"
-            {...register("vigencia_desde")}
+            {...register("vig_desde")}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
@@ -104,7 +104,7 @@ function CohorteForm({
           <input
             id="coh-hasta"
             type="date"
-            {...register("vigencia_hasta")}
+            {...register("vig_hasta")}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
@@ -143,13 +143,13 @@ export function CohortesPage() {
   const columns: Column<Record<string, unknown>>[] = [
     { key: "nombre", label: "Nombre", sortable: true },
     { key: "anio", label: "Año", sortable: true },
-    { key: "vigencia_desde", label: "Desde" },
-    { key: "vigencia_hasta", label: "Hasta", render: (row) => (row.vigencia_hasta as string) ?? "—" },
+    { key: "vig_desde", label: "Desde" },
+    { key: "vig_hasta", label: "Hasta", render: (row) => (row.vig_hasta as string) ?? "—" },
     {
-      key: "activa",
+      key: "estado",
       label: "Estado",
       render: (row) =>
-        row.activa !== false ? (
+        row.estado !== "Inactiva" ? (
           <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
             Activa
           </span>
@@ -178,12 +178,12 @@ export function CohortesPage() {
               onClick={() =>
                 actualizarMutation.mutate({
                   id: cohorte.id,
-                  payload: { activa: cohorte.activa === false },
+                  payload: { estado: cohorte.estado === "Inactiva" ? "Activa" : "Inactiva" },
                 })
               }
               className="text-xs text-gray-500 underline hover:text-gray-700"
             >
-              {cohorte.activa === false ? "Activar" : "Desactivar"}
+              {cohorte.estado === "Inactiva" ? "Activar" : "Desactivar"}
             </button>
           </div>
         );
@@ -214,7 +214,12 @@ export function CohortesPage() {
         <CohorteForm
           defaultValues={
             editTarget
-              ? { nombre: editTarget.nombre, anio: editTarget.anio ?? undefined }
+              ? {
+                  nombre: editTarget.nombre,
+                  anio: editTarget.anio ?? undefined,
+                  vig_desde: editTarget.vig_desde ?? undefined,
+                  vig_hasta: editTarget.vig_hasta ?? undefined,
+                }
               : undefined
           }
           onClose={() => {
@@ -225,7 +230,7 @@ export function CohortesPage() {
             if (editTarget) {
               await actualizarMutation.mutateAsync({
                 id: editTarget.id,
-                payload: data,
+                payload: { nombre: data.nombre, vig_desde: data.vig_desde, vig_hasta: data.vig_hasta },
               });
             } else {
               await crearMutation.mutateAsync(data);

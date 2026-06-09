@@ -155,7 +155,15 @@ class EquipoService:
         domain_id = await self._resolve_domain_usuario_id(usuario_id)
         if domain_id is None:
             return []
-        asignaciones = await self.repo.list_by_usuario(domain_id)
+
+        # Aplicar filtros via list_by_context (soporta materia_id, carrera_id, cohorte_id, rol)
+        asignaciones = await self.repo.list_by_context(
+            materia_id=filtros.get("materia_id"),
+            carrera_id=filtros.get("carrera_id"),
+            cohorte_id=filtros.get("cohorte_id"),
+            usuario_id=domain_id,
+            rol=filtros.get("rol"),
+        )
         materias, carreras, cohortes = await self._resolve_nombres_contexto(asignaciones)
 
         result = []

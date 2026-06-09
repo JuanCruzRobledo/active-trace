@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { Input } from "@/shared/components/Input";
 import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
 import { useAtrasados } from "@/features/comision/hooks/useAtrasados";
-import type { AtrasadosFilters } from "@/features/comision/services/atrasados";
 
 function RiesgoBadge({ riesgo }: { riesgo: string }) {
   const styles: Record<string, string> = {
@@ -25,11 +24,16 @@ function RiesgoBadge({ riesgo }: { riesgo: string }) {
 
 export function AtrasadosPage() {
   const { materiaId } = useParams<{ materiaId: string }>();
-  const [filters, setFilters] = useState<AtrasadosFilters>({});
-  const { data, isLoading, isError, error } = useAtrasados(materiaId!, filters);
+  const [nombreFilter, setNombreFilter] = useState("");
+  const { data, isLoading, isError, error } = useAtrasados(materiaId!);
 
-  const hasFilters = filters.nombre || filters.actividad || filters.nota_min !== undefined || filters.nota_max !== undefined;
-  const items = data?.items ?? [];
+  const items = useMemo(() => {
+    const raw = data?.items ?? [];
+    if (!nombreFilter) return raw;
+    const q = nombreFilter.toLowerCase();
+    return raw.filter((row) => row.alumno.toLowerCase().includes(q));
+  }, [data, nombreFilter]);
+
   const isEmpty = !isLoading && !isError && items.length === 0;
 
   return (
@@ -44,74 +48,21 @@ export function AtrasadosPage() {
       </div>
 
       <div className="flex flex-wrap gap-3 rounded-lg border bg-white p-4 shadow-sm">
-        <div className="w-48">
+        <div className="w-64">
           <label className="mb-1 block text-xs font-medium text-gray-600">
-            Nombre
+            Buscar por nombre
           </label>
           <Input
-            placeholder="Filtrar por nombre"
-            value={filters.nombre ?? ""}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, nombre: e.target.value || undefined }))
-            }
+            placeholder="Filtrar por nombre o apellido..."
+            value={nombreFilter}
+            onChange={(e) => setNombreFilter(e.target.value)}
           />
         </div>
-        <div className="w-40">
-          <label className="mb-1 block text-xs font-medium text-gray-600">
-            Actividad
-          </label>
-          <Input
-            placeholder="Actividad"
-            value={filters.actividad ?? ""}
-            onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                actividad: e.target.value || undefined,
-              }))
-            }
-          />
-        </div>
-        <div className="w-28">
-          <label className="mb-1 block text-xs font-medium text-gray-600">
-            Nota mín
-          </label>
-          <Input
-            type="number"
-            min={0}
-            max={10}
-            placeholder="0"
-            value={filters.nota_min ?? ""}
-            onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                nota_min: e.target.value ? Number(e.target.value) : undefined,
-              }))
-            }
-          />
-        </div>
-        <div className="w-28">
-          <label className="mb-1 block text-xs font-medium text-gray-600">
-            Nota máx
-          </label>
-          <Input
-            type="number"
-            min={0}
-            max={10}
-            placeholder="10"
-            value={filters.nota_max ?? ""}
-            onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                nota_max: e.target.value ? Number(e.target.value) : undefined,
-              }))
-            }
-          />
-        </div>
-        {hasFilters && (
+        {nombreFilter && (
           <div className="flex items-end">
             <button
               type="button"
-              onClick={() => setFilters({})}
+              onClick={() => setNombreFilter("")}
               className="rounded-md px-3 py-2 text-sm text-gray-500 hover:text-gray-700"
             >
               Limpiar

@@ -11,9 +11,9 @@ const select_class =
 
 function SeveridadBadge({ severidad }: { severidad: string }) {
   const styles: Record<string, string> = {
-    critical: "bg-red-100 text-red-800",
-    warning: "bg-yellow-100 text-yellow-800",
-    info: "bg-blue-100 text-blue-800",
+    "Crítico": "bg-red-100 text-red-800",
+    "Advertencia": "bg-yellow-100 text-yellow-800",
+    "Info": "bg-blue-100 text-blue-800",
   };
   return (
     <span
@@ -45,7 +45,6 @@ export function AvisosListPage() {
   const [filters, setFilters] = useState<AvisoFilters>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { data, isLoading, isError, error } = useAvisos(filters);
-  console.log("Data: ", data);
   
   const eliminarAviso = useEliminarAviso();
 
@@ -122,11 +121,10 @@ export function AvisosListPage() {
         className={select_class}
       >
         <option value="">Todos los alcances</option>
-        <option value="global">Global</option>
-        <option value="carrera">Carrera</option>
-        <option value="cohorte">Cohorte</option>
-        <option value="materia">Materia</option>
-        <option value="rol">Rol</option>
+        <option value="Global">Global</option>
+        <option value="PorMateria">Por Materia</option>
+        <option value="PorCohorte">Por Cohorte</option>
+        <option value="PorRol">Por Rol</option>
       </select>
       <select
         value={filters.severidad ?? ""}
@@ -139,9 +137,9 @@ export function AvisosListPage() {
         className={select_class}
       >
         <option value="">Todas las severidades</option>
-        <option value="info">Info</option>
-        <option value="warning">Warning</option>
-        <option value="critical">Critical</option>
+        <option value="Info">Info</option>
+        <option value="Advertencia">Advertencia</option>
+        <option value="Crítico">Crítico</option>
       </select>
       <select
         value={filters.activo !== undefined ? String(filters.activo) : ""}

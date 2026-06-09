@@ -4,8 +4,7 @@ import { z } from "zod";
 
 export const AccionPorDiaSchema = z.object({
   fecha: z.string(),
-  cantidad: z.number().int(),
-  materia_id: z.string().uuid().nullable().optional(),
+  total: z.number().int(),
 }).passthrough();
 
 export type AccionPorDia = z.infer<typeof AccionPorDiaSchema>;
@@ -14,9 +13,12 @@ export type AccionPorDia = z.infer<typeof AccionPorDiaSchema>;
 
 export const ComunicacionPorDocenteSchema = z.object({
   usuario_id: z.string().uuid(),
-  nombre: z.string().nullable().optional(),
-  cantidad: z.number().int(),
-  materia_id: z.string().uuid().nullable().optional(),
+  nombre: z.string(),
+  Pendiente: z.number().int().optional(),
+  Enviando: z.number().int().optional(),
+  OK: z.number().int().optional(),
+  Fallido: z.number().int().optional(),
+  Cancelado: z.number().int().optional(),
 }).passthrough();
 
 export type ComunicacionPorDocente = z.infer<typeof ComunicacionPorDocenteSchema>;
@@ -25,10 +27,11 @@ export type ComunicacionPorDocente = z.infer<typeof ComunicacionPorDocenteSchema
 
 export const InteraccionPorDocenteMateriaSchema = z.object({
   usuario_id: z.string().uuid(),
+  nombre: z.string(),
   materia_id: z.string().uuid(),
-  nombre_usuario: z.string().nullable().optional(),
-  nombre_materia: z.string().nullable().optional(),
-  cantidad: z.number().int(),
+  materia_nombre: z.string(),
+  acciones: z.record(z.string(), z.number().int()),
+  total: z.number().int(),
 }).passthrough();
 
 export type InteraccionPorDocenteMateria = z.infer<
@@ -39,13 +42,12 @@ export type InteraccionPorDocenteMateria = z.infer<
 
 export const UltimaAccionSchema = z.object({
   id: z.string().uuid(),
-  usuario_id: z.string().uuid().nullable().optional(),
-  materia_id: z.string().uuid().nullable().optional(),
+  fecha_hora: z.string().nullable().optional(),
+  actor_nombre: z.string().nullable().optional(),
   accion: z.string(),
-  registros: z.number().int().nullable().optional(),
+  materia_nombre: z.string().nullable().optional(),
+  detalle: z.any().optional(),
   ip: z.string().nullable().optional(),
-  user_agent: z.string().nullable().optional(),
-  created_at: z.string().nullable().optional(),
 }).passthrough();
 
 export type UltimaAccion = z.infer<typeof UltimaAccionSchema>;
@@ -54,14 +56,16 @@ export type UltimaAccion = z.infer<typeof UltimaAccionSchema>;
 
 export const LogItemSchema = z.object({
   id: z.string().uuid(),
-  tenant_id: z.string().uuid().nullable().optional(),
-  usuario_id: z.string().uuid().nullable().optional(),
+  fecha_hora: z.string().nullable().optional(),
+  actor_id: z.string().uuid().nullable().optional(),
+  actor_nombre: z.string().nullable().optional(),
   materia_id: z.string().uuid().nullable().optional(),
+  materia_nombre: z.string().nullable().optional(),
   accion: z.string(),
-  registros: z.number().int().nullable().optional(),
+  detalle: z.any().optional(),
+  filas_afectadas: z.number().int().nullable().optional(),
   ip: z.string().nullable().optional(),
   user_agent: z.string().nullable().optional(),
-  created_at: z.string().nullable().optional(),
 }).passthrough();
 
 export type LogItem = z.infer<typeof LogItemSchema>;

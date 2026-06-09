@@ -31,7 +31,12 @@ export function VigenciaEquipoPage() {
   });
 
   const onSubmit = async (data: VigenciaRequest) => {
-    await actualizarVigencia.mutateAsync(data);
+    // Convertir string vacio a null para que Pydantic no falle con datetime
+    const payload = {
+      ...data,
+      hasta: data.hasta || undefined,
+    };
+    await actualizarVigencia.mutateAsync(payload);
     reset();
   };
 
@@ -101,6 +106,14 @@ export function VigenciaEquipoPage() {
           <div className="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-800">
             Vigencia actualizada: {actualizarVigencia.data.afectadas}
             {" "}asignaciones modificadas
+          </div>
+        )}
+
+        {actualizarVigencia.isError && (
+          <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            {actualizarVigencia.error instanceof Error
+              ? actualizarVigencia.error.message
+              : "Error al actualizar la vigencia. Verificá que el contexto tenga asignaciones."}
           </div>
         )}
       </form>

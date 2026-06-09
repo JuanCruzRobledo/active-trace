@@ -2,36 +2,40 @@ import { z } from "zod";
 
 export const GuardiaSchema = z.object({
   id: z.string().uuid(),
-  materia_id: z.string().uuid(),
-  usuario_id: z.string().uuid(),
-  fecha: z.string(),
-  hora_inicio: z.string(),
-  hora_fin: z.string(),
-  estado: z.string().default("pendiente"),
+  asignacion_id: z.string().uuid().nullable().optional(),
+  materia_id: z.string().uuid().nullable().optional(),
+  carrera_id: z.string().uuid().nullable().optional(),
+  cohorte_id: z.string().uuid().nullable().optional(),
+  dia: z.string(),
+  horario: z.string(),
+  estado: z.string(),
   comentarios: z.string().optional().nullable(),
-  creado_en: z.string(),
-  actualizado_en: z.string(),
-});
-
-const guardiaCreateBase = z.object({
-  materia_id: z.string().uuid("Seleccioná una materia"),
-  fecha: z.string().min(1, "La fecha es obligatoria"),
-  hora_inicio: z.string().min(1, "La hora de inicio es obligatoria"),
-  hora_fin: z.string().min(1, "La hora de fin es obligatoria"),
-  estado: z.string().optional(),
-  comentarios: z.string().optional().nullable(),
-}).strict();
-
-export const GuardiaCreateSchema = guardiaCreateBase.refine(
-  (data) => !data.hora_inicio || !data.hora_fin || data.hora_inicio < data.hora_fin,
-  { message: "La hora de fin debe ser posterior a la de inicio", path: ["hora_fin"] },
-);
-
-export const GuardiaUpdateSchema = guardiaCreateBase.partial();
+  creada_at: z.string().nullable().optional(),
+  created_at: z.string().nullable().optional(),
+  updated_at: z.string().nullable().optional(),
+  docente_nombre: z.string().nullable().optional(),
+}).passthrough();
 
 export type Guardia = z.infer<typeof GuardiaSchema>;
-export type GuardiaCreate = z.input<typeof GuardiaCreateSchema>;
-export type GuardiaUpdate = z.input<typeof GuardiaUpdateSchema>;
+
+export const GuardiaCreateSchema = z.object({
+  dia: z.string().min(1, "El día es obligatorio"),
+  horario: z.string().min(1, "El horario es obligatorio"),
+  estado: z.string().optional(),
+  comentarios: z.string().optional().nullable(),
+  materia_id: z.string().uuid("Seleccioná una materia").optional(),
+  carrera_id: z.string().uuid("Seleccioná una carrera").optional(),
+  cohorte_id: z.string().uuid("Seleccioná un cohorte").optional(),
+}).passthrough();
+
+export type GuardiaCreate = z.infer<typeof GuardiaCreateSchema>;
+
+export const GuardiaUpdateSchema = z.object({
+  estado: z.string().optional(),
+  comentarios: z.string().optional().nullable(),
+}).passthrough();
+
+export type GuardiaUpdate = z.infer<typeof GuardiaUpdateSchema>;
 
 export interface GuardiaFilters {
   materia_id?: string;
