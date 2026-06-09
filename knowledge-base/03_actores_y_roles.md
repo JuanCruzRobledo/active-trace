@@ -28,7 +28,7 @@ El sistema define los siguientes roles. Cada uno representa una **función**, no
 | **TUTOR** | Auxiliar / ayudante de cátedra | Acompañar el seguimiento de alumnos, cubrir guardias, asistir al profesor. |
 | **PROFESOR** | Docente a cargo de una o más comisiones | Gestionar sus comisiones: calificaciones, detección de atrasados, comunicación con alumnos, encuentros. |
 | **COORDINADOR** | Responsable de un conjunto de materias o de una cohorte | Armar equipos docentes, supervisar rendimiento, publicar avisos, coordinar tareas. |
-| **NEXO** | Rol de articulación / enlace transversal | Cumple funciones de puente entre la institución y grupos de docentes o alumnos (no atado a una materia específica). |
+| **NEXO** | Rol de articulación / enlace institucional | Enlace administrativo entre la institución y el equipo docente para temas contractuales y de coordinación. Asociado a una o más carreras/cohortes (no a comisiones específicas). Acceso de solo lectura a datos de alumnos de su cohorte. NO puede asignar docentes ni modificar calificaciones. Tiene su propio salario base (ver RN-32) pero NO genera plus por materia (no dicta comisiones). Se visibiliza por separado en reportes de liquidación pero suma al total general (RN-36). |
 | **ADMIN** | Administrador del sistema dentro del tenant | Gestionar la estructura académica (carreras, cohortes, materias), usuarios y configuración del tenant. |
 | **FINANZAS** | Responsable de liquidaciones y honorarios | Operar la grilla salarial, calcular y cerrar liquidaciones, gestionar facturas. |
 

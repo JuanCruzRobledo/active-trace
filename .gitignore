@@ -1,3 +1,9 @@
+# Node / JS
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
 # Build output intermedio (regenerable con `npm run pdf` desde .build/)
 .build/node_modules/
 .build/activia-trace-doc.html
@@ -6,8 +12,21 @@
 # PDF generado (es regenerable; descomentar si NO querés versionarlo)
 # activia-trace-documentacion.pdf
 
+# Python
+__pycache__/
+*.pyc
+backend/__pycache__/
+backend/app/__pycache__/
+backend/.venv/
+backend/venv/
+*.egg-info/
+
 # OS / IDE
 Thumbs.db
 .DS_Store
 .vscode/
 .idea/
+
+# Environment
+.env
+backend/.env
