@@ -83,6 +83,7 @@ PERMISOS = [
     ("avisos:gestionar", "Gestionar avisos institucionales (crear, editar, eliminar, ver tracking)"),
     ("avisos:ver", "Ver avisos, timeline y confirmar lectura"),
     ("tareas:gestionar", "Gestionar tareas internas (crear, cambiar estado, comentar)"),
+    ("auditoria:ver", "Ver auditoría de acciones del sistema"),
 ]
 
 # QUÉ permisos tiene cada rol
@@ -95,7 +96,7 @@ ROLE_PERMISOS: dict[str, list[str]] = {
         "guardias:registrar", "guardias:ver-admin",
         "coloquios:gestionar", "coloquios:ver",
         "avisos:gestionar", "avisos:ver",
-        "tareas:gestionar",
+        "tareas:gestionar", "auditoria:ver"
     ],
     "PROFESOR": [
         "atrasados:ver", "equipos:ver",

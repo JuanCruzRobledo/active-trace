@@ -30,17 +30,17 @@ interface MateriaOption {
 }
 
 async function fetchCarreras(): Promise<CarreraOption[]> {
-  const { data } = await api.get<CarreraOption[]>("/carreras");
+  const { data } = await api.get<CarreraOption[]>("/admin/carreras");
   return data;
 }
 
 async function fetchCohortes(carreraId: string): Promise<CohorteOption[]> {
-  const { data } = await api.get<CohorteOption[]>(`/carreras/${carreraId}/cohortes`);
-  return data;
+  const { data } = await api.get<(CohorteOption & { carrera_id: string })[]>("/admin/cohortes");
+  return data.filter((c) => c.carrera_id === carreraId);
 }
 
-async function fetchMaterias(cohorteId: string): Promise<MateriaOption[]> {
-  const { data } = await api.get<MateriaOption[]>(`/cohortes/${cohorteId}/materias`);
+async function fetchMaterias(): Promise<MateriaOption[]> {
+  const { data } = await api.get<MateriaOption[]>("/admin/materias");
   return data;
 }
 
@@ -64,8 +64,8 @@ export function ContextoAcademicoSelector({
   });
 
   const materiasQuery = useQuery({
-    queryKey: ["materias", cohorteId],
-    queryFn: () => fetchMaterias(cohorteId),
+    queryKey: ["materias"],
+    queryFn: fetchMaterias,
     enabled: !!cohorteId,
   });
 

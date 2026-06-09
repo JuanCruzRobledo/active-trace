@@ -177,7 +177,7 @@ export function App() {
             <Route
               path="avisos"
               element={
-                <RequirePermission permission="avisos:publicar">
+                <RequirePermission permission="avisos:gestionar">
                   <AvisosListPage />
                 </RequirePermission>
               }
@@ -185,7 +185,7 @@ export function App() {
             <Route
               path="avisos/nuevo"
               element={
-                <RequirePermission permission="avisos:publicar">
+                <RequirePermission permission="avisos:gestionar">
                   <AvisoFormPage />
                 </RequirePermission>
               }
@@ -193,7 +193,7 @@ export function App() {
             <Route
               path="avisos/:id"
               element={
-                <RequirePermission permission="avisos:publicar">
+                <RequirePermission permission="avisos:gestionar">
                   <AvisoDetailPage />
                 </RequirePermission>
               }
@@ -201,7 +201,7 @@ export function App() {
             <Route
               path="avisos/:id/editar"
               element={
-                <RequirePermission permission="avisos:publicar">
+                <RequirePermission permission="avisos:gestionar">
                   <AvisoFormPage />
                 </RequirePermission>
               }
@@ -214,7 +214,7 @@ export function App() {
               <Route
                 path="asignar"
                 element={
-                  <RequirePermission permission="tareas:asignar">
+                  <RequirePermission permission="tareas:gestionar">
                     <AsignarTareaPage />
                   </RequirePermission>
                 }
@@ -222,7 +222,7 @@ export function App() {
               <Route
                 path="admin"
                 element={
-                  <RequirePermission permission="tareas:asignar">
+                  <RequirePermission permission="tareas:gestionar">
                     <TareasAdminPage />
                   </RequirePermission>
                 }
@@ -233,7 +233,7 @@ export function App() {
             <Route
               path="encuentros"
               element={
-                <RequirePermission permission="encuentros:ver">
+                <RequirePermission permission="encuentros:gestionar">
                   <EncuentrosAdminPage />
                 </RequirePermission>
               }
@@ -367,7 +367,7 @@ export function App() {
             <Route
               path="usuarios"
               element={
-                <RequirePermission permission="usuarios:gestionar">
+                <RequirePermission permission="admin:gestionar-usuarios">
                   <UsuariosListPage />
                 </RequirePermission>
               }
@@ -375,7 +375,7 @@ export function App() {
             <Route
               path="usuarios/nuevo"
               element={
-                <RequirePermission permission="usuarios:gestionar">
+                <RequirePermission permission="admin:gestionar-usuarios">
                   <UsuarioFormPage />
                 </RequirePermission>
               }
@@ -383,7 +383,7 @@ export function App() {
             <Route
               path="usuarios/:id/editar"
               element={
-                <RequirePermission permission="usuarios:gestionar">
+                <RequirePermission permission="admin:gestionar-usuarios">
                   <UsuarioFormPage />
                 </RequirePermission>
               }
