@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const AvisoCreateSchema = z.object({
   alcance: z.enum(["Global", "PorMateria", "PorCohorte", "PorRol"]),
-  materia_id: z.string().uuid().optional(),
-  cohorte_id: z.string().uuid().optional(),
+  materia_id: z.preprocess((v) => (v === "" || v == null) ? undefined : v, z.string().uuid().optional()),
+  cohorte_id: z.preprocess((v) => (v === "" || v == null) ? undefined : v, z.string().uuid().optional()),
   rol_destino: z.string().optional(),
   severidad: z.enum(["Info", "Advertencia", "Crítico"]),
   titulo: z.string().min(1).max(200),

@@ -3,6 +3,7 @@ import { Button } from "@/shared/components/Button";
 import { FormField } from "@/shared/components/FormField";
 import { Input } from "@/shared/components/Input";
 import type { AvisoCreate } from "@/features/avisos/types/avisos";
+import type { Materia, Cohorte } from "@/features/estructura-academica/types/estructura";
 
 const input_class =
   "block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500";
@@ -18,6 +19,8 @@ interface AvisoFormBodyProps {
   isPending: boolean;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
+  materias?: Materia[];
+  cohortes?: Cohorte[];
 }
 
 export function AvisoFormBody({
@@ -28,6 +31,8 @@ export function AvisoFormBody({
   isPending,
   onSubmit,
   onCancel,
+  materias = [],
+  cohortes = [],
 }: AvisoFormBodyProps) {
   const alcance = watch("alcance");
 
@@ -71,13 +76,23 @@ export function AvisoFormBody({
       </div>
 
       {alcance === "PorMateria" && (
-        <FormField label="ID de Materia" html_for="materia_id" error={errors.materia_id?.message}>
-          <Input id="materia_id" placeholder="UUID de la materia" {...register("materia_id")} />
+        <FormField label="Materia" html_for="materia_id" error={errors.materia_id?.message}>
+          <select id="materia_id" className={select_class} {...register("materia_id")}>
+            <option value="">Seleccionar materia</option>
+            {materias.map((m) => (
+              <option key={m.id} value={m.id}>{m.nombre}</option>
+            ))}
+          </select>
         </FormField>
       )}
       {alcance === "PorCohorte" && (
-        <FormField label="ID de Cohorte" html_for="cohorte_id" error={errors.cohorte_id?.message}>
-          <Input id="cohorte_id" placeholder="UUID del cohorte" {...register("cohorte_id")} />
+        <FormField label="Cohorte" html_for="cohorte_id" error={errors.cohorte_id?.message}>
+          <select id="cohorte_id" className={select_class} {...register("cohorte_id")}>
+            <option value="">Seleccionar cohorte</option>
+            {cohortes.map((c) => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
+          </select>
         </FormField>
       )}
       {alcance === "PorRol" && (

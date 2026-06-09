@@ -9,6 +9,10 @@ import {
   useActualizarAviso,
 } from "@/features/avisos/hooks/useAvisos";
 import {
+  useMaterias,
+  useCohortes,
+} from "@/features/estructura-academica/hooks/useEstructura";
+import {
   AvisoCreateSchema,
   type AvisoCreate,
 } from "@/features/avisos/types/avisos";
@@ -22,6 +26,8 @@ export function AvisoFormPage() {
   const avisoQuery = useAvisoById(id ?? "");
   const crearAviso = useCrearAviso();
   const actualizarAviso = useActualizarAviso();
+  const { data: materias = [] } = useMaterias();
+  const { data: cohortes = [] } = useCohortes();
 
   const {
     register,
@@ -102,6 +108,8 @@ export function AvisoFormPage() {
         isPending={isEdit ? actualizarAviso.isPending : crearAviso.isPending}
         onSubmit={handleSubmit(onSubmit)}
         onCancel={() => navigate("/avisos")}
+        materias={materias}
+        cohortes={cohortes}
       />
     </div>
   );

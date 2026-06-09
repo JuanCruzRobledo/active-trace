@@ -16,7 +16,10 @@ export type Evaluacion = z.infer<typeof EvaluacionSchema>;
 
 export const EvaluacionCreateSchema = z.object({
   materia_id: z.string().uuid("Seleccioná una materia"),
-  cohorte_id: z.string().uuid().nullable().optional(),
+  cohorte_id: z.preprocess(
+    (v) => (v === "" || v == null) ? undefined : v,
+    z.string().uuid().optional()
+  ),
   titulo: z.string().min(1, "El título es obligatorio"),
   fechas_disponibles: z.any().nullable().optional(),
   cupos_por_dia: z.number().int().positive().nullable().optional(),

@@ -9,10 +9,19 @@ import {
   EvaluacionCreateSchema,
   type EvaluacionCreate,
 } from "@/features/coloquios/types/coloquios";
+import {
+  useMaterias,
+  useCohortes,
+} from "@/features/estructura-academica/hooks/useEstructura";
+
+const select_class =
+  "block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500";
 
 export function ConvocatoriaFormPage() {
   const navigate = useNavigate();
   const crearConvocatoria = useCrearConvocatoria();
+  const { data: materias = [] } = useMaterias();
+  const { data: cohortes = [] } = useCohortes();
 
   const {
     register,
@@ -61,27 +70,41 @@ export function ConvocatoriaFormPage() {
         </FormField>
 
         <FormField
-          label="Materia (UUID)"
+          label="Materia"
           html_for="materia_id"
           error={errors.materia_id?.message}
         >
-          <Input
+          <select
             id="materia_id"
-            placeholder="UUID de la materia"
+            className={select_class}
             {...register("materia_id")}
-          />
+          >
+            <option value="">Seleccionar materia</option>
+            {materias.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nombre}
+              </option>
+            ))}
+          </select>
         </FormField>
 
         <FormField
-          label="Cohorte (UUID, opcional)"
+          label="Cohorte (opcional)"
           html_for="cohorte_id"
           error={errors.cohorte_id?.message}
         >
-          <Input
+          <select
             id="cohorte_id"
-            placeholder="UUID del cohorte"
+            className={select_class}
             {...register("cohorte_id")}
-          />
+          >
+            <option value="">Sin cohorte específico</option>
+            {cohortes.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+              </option>
+            ))}
+          </select>
         </FormField>
 
         <FormField

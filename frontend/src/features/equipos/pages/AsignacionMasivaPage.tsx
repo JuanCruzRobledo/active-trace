@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/shared/components/Button";
 import { FormField } from "@/shared/components/FormField";
@@ -9,12 +9,25 @@ import {
   AsignacionMasivaRequestSchema,
   type AsignacionMasivaRequest,
 } from "@/features/equipos/types/equipos";
+import { useUsuariosTenant } from "@/features/usuarios-tenant/hooks/useUsuariosTenant";
+
+const ROLES_DOCENTES = [
+  { value: "PROFESOR", label: "Profesor" },
+  { value: "TUTOR", label: "Tutor" },
+  { value: "COORDINADOR", label: "Coordinador" },
+  { value: "NEXO", label: "Nexo" },
+];
+
+const select_class =
+  "block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500";
 
 export function AsignacionMasivaPage() {
   const asignacionMasiva = useAsignacionMasiva();
+  const { data: usuarios = [] } = useUsuariosTenant();
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
     reset,
@@ -66,37 +79,54 @@ export function AsignacionMasivaPage() {
         </div>
 
         <FormField
-          label="IDs de usuarios (uno por línea)"
+          label="Docentes"
           html_for="usuario_ids"
           error={errors.usuario_ids?.message}
         >
-          <textarea
-            id="usuario_ids"
-            rows={4}
-            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-            placeholder="uuid-1&#10;uuid-2&#10;uuid-3"
-            {...register("usuario_ids", {
-              setValueAs: (v: string | string[]) =>
-                Array.isArray(v)
-                  ? v
-                  : v
-                      .split("\n")
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-            })}
+          <Controller
+            name="usuario_ids"
+            control={control}
+            render={({ field }) => (
+              <select
+                id="usuario_ids"
+                multiple
+                size={6}
+                className={select_class}
+                value={field.value}
+                onChange={(e) => {
+                  field.onChange(
+                    Array.from(e.target.selectedOptions, (o) => o.value)
+                  );
+                }}
+              >
+                {usuarios
+                  .slice()
+                  .sort((a, b) =>
+                    `${a.apellidos} ${a.nombre}`.localeCompare(
+                      `${b.apellidos} ${b.nombre}`
+                    )
+                  )
+                  .map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.apellidos}, {u.nombre} — {u.email}
+                    </option>
+                  ))}
+              </select>
+            )}
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Ctrl+clic (o Cmd+clic) para seleccionar varios
+          </p>
         </FormField>
 
         <FormField label="Rol" html_for="rol" error={errors.rol?.message}>
-          <select
-            id="rol"
-            className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-            {...register("rol")}
-          >
+          <select id="rol" className={select_class} {...register("rol")}>
             <option value="">Seleccionar rol</option>
-            <option value="profesor">Profesor</option>
-            <option value="tutor">Tutor</option>
-            <option value="coordinador">Coordinador</option>
+            {ROLES_DOCENTES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
           </select>
         </FormField>
 
@@ -125,9 +155,7 @@ export function AsignacionMasivaPage() {
           <Button
             type="button"
             variant="secondary"
-            onClick={() => {
-              reset();
-            }}
+            onClick={() => reset()}
           >
             Cancelar
           </Button>
