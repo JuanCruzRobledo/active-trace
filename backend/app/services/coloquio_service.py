@@ -174,6 +174,25 @@ class ColoquioService:
 
         return await self._to_evaluacion_response(evaluacion)
 
+    # ── Obtener convocatoria por ID ──────────────────────────────────────
+
+    async def obtener_convocatoria(self, evaluacion_id: UUID) -> dict:
+        """Obtiene una convocatoria por ID.
+
+        Args:
+            evaluacion_id: UUID de la evaluacion.
+
+        Returns:
+            EvaluacionResponse dict.
+
+        Raises:
+            BusinessError: Si la convocatoria no existe.
+        """
+        evaluacion = await self.evaluacion_repo.get_by_id(evaluacion_id)
+        if evaluacion is None:
+            raise BusinessError("Convocatoria no encontrada")
+        return await self._to_evaluacion_response(evaluacion)
+
     # ── Actualizacion de convocatoria ────────────────────────────────────
 
     async def actualizar_convocatoria(

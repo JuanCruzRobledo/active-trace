@@ -61,3 +61,14 @@ export async function agregarComentario(
   );
   return data;
 }
+
+export interface DocenteOption {
+  id: string;
+  nombre: string;
+  apellidos: string;
+}
+
+export async function fetchDocentes(): Promise<DocenteOption[]> {
+  const { data } = await api.get<DocenteOption[]>("/tareas/docentes");
+  return data;
+}

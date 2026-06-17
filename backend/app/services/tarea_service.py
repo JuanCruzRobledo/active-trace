@@ -66,10 +66,17 @@ class TareaService:
     def _tiene_permiso_gestionar(self) -> bool:
         """Verifica si el actor tiene permiso de gestion.
 
+        El JWT contiene codigos de rol (``ADMIN``, ``PROFESOR``, ...),
+        no permisos directos. Ademas del check del permiso especifico,
+        los roles ADMIN y COORDINADOR tienen gestion implicita.
+
         Returns:
             True si el actor tiene ``tareas:gestionar``.
         """
-        return PERMISO_GESTIONAR in self.roles
+        return (
+            PERMISO_GESTIONAR in self.roles
+            or any(r in ("ADMIN", "COORDINADOR") for r in self.roles)
+        )
 
     def _puede_acceder_tarea(self, tarea: Tarea) -> bool:
         """Verifica si el actor puede acceder a una tarea.
@@ -162,18 +169,34 @@ class TareaService:
     async def _to_tarea_response(self, tarea: Tarea) -> dict:
         """Convierte una Tarea a dict de respuesta.
 
+        Resuelve nombres de usuarios desde las relaciones ``asignado``
+        y ``asignador`` del modelo Tarea.
+
         Args:
             tarea: Instancia de Tarea.
 
         Returns:
             Dict con datos de la tarea.
         """
+        asignado_nombre = None
+        asignador_nombre = None
+        if tarea.asignado:
+            asignado_nombre = (
+                f"{tarea.asignado.nombre} {tarea.asignado.apellidos}".strip()
+            )
+        if tarea.asignador:
+            asignador_nombre = (
+                f"{tarea.asignador.nombre} {tarea.asignador.apellidos}".strip()
+            )
+
         return {
             "id": tarea.id,
             "tenant_id": tarea.tenant_id,
             "materia_id": tarea.materia_id,
             "asignado_a": tarea.asignado_a,
+            "asignado_a_nombre": asignado_nombre,
             "asignado_por": tarea.asignado_por,
+            "asignado_por_nombre": asignador_nombre,
             "estado": tarea.estado.value if hasattr(tarea.estado, "value") else str(tarea.estado),
             "descripcion": tarea.descripcion,
             "contexto_id": tarea.contexto_id,

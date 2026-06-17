@@ -3,16 +3,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/Button";
 import { FormField } from "@/shared/components/FormField";
-import { Input } from "@/shared/components/Input";
-import { useCrearTarea } from "@/features/tareas/hooks/useTareas";
+import { useCrearTarea, useDocentes } from "@/features/tareas/hooks/useTareas";
 import {
   TareaCreateSchema,
   type TareaCreate,
 } from "@/features/tareas/types/tareas";
+import { useMaterias } from "@/features/estructura-academica/hooks/useEstructura";
+
+const select_class =
+  "block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500";
 
 export function AsignarTareaPage() {
   const navigate = useNavigate();
   const crearTarea = useCrearTarea();
+  const { data: docentes = [] } = useDocentes();
+  const { data: materias = [] } = useMaterias();
 
   const {
     register,
@@ -46,27 +51,43 @@ export function AsignarTareaPage() {
         className="space-y-5 rounded-lg border bg-white p-6 shadow-sm"
       >
         <FormField
-          label="Docente (UUID)"
+          label="Docente"
           html_for="asignado_a"
           error={errors.asignado_a?.message}
         >
-          <Input
+          <select
             id="asignado_a"
-            placeholder="UUID del docente"
+            className={select_class}
             {...register("asignado_a")}
-          />
+          >
+            <option value="">Seleccionar docente</option>
+            {docentes.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.apellidos}, {d.nombre}
+              </option>
+            ))}
+          </select>
         </FormField>
 
         <FormField
-          label="Materia (UUID, opcional)"
+          label="Materia (opcional)"
           html_for="materia_id"
           error={errors.materia_id?.message}
         >
-          <Input
+          <select
             id="materia_id"
-            placeholder="UUID de la materia"
+            className={select_class}
             {...register("materia_id")}
-          />
+          >
+            <option value="">Sin materia específica</option>
+            {materias
+              .filter((m) => m.estado !== "Inactivo")
+              .map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nombre}
+                </option>
+              ))}
+          </select>
         </FormField>
 
         <FormField

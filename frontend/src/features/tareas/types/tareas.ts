@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 export const TareaEstadoEnum = z.enum([
-  "pendiente",
-  "en_curso",
-  "completada",
-  "cancelada",
+  "Pendiente",
+  "En progreso",
+  "Resuelta",
+  "Cancelada",
 ]);
 
 export const TareaSchema = z.object({

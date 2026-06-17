@@ -13,9 +13,9 @@ from pydantic import BaseModel, ConfigDict, Field
 class GuardiaCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    materia_id: UUID
-    carrera_id: UUID
-    cohorte_id: UUID
+    materia_id: UUID | None = None
+    carrera_id: UUID | None = None
+    cohorte_id: UUID | None = None
     dia: str
     horario: str = Field(..., max_length=50)
     comentarios: str | None = None

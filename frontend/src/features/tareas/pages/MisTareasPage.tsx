@@ -8,10 +8,10 @@ import type { Tarea } from "@/features/tareas/types/tareas";
 import type { Column } from "@/shared/components/FilterableTable";
 
 const estado_colors: Record<string, string> = {
-  pendiente: "bg-yellow-100 text-yellow-800",
-  en_curso: "bg-blue-100 text-blue-800",
-  completada: "bg-green-100 text-green-800",
-  cancelada: "bg-gray-100 text-gray-600",
+  Pendiente: "bg-yellow-100 text-yellow-800",
+  "En progreso": "bg-blue-100 text-blue-800",
+  Resuelta: "bg-green-100 text-green-800",
+  Cancelada: "bg-gray-100 text-gray-600",
 };
 
 export function MisTareasPage() {
@@ -40,10 +40,10 @@ export function MisTareasPage() {
             }
             className={`rounded-full px-2 py-0.5 text-xs font-medium ${estado_colors[estado] ?? "bg-gray-100 text-gray-800"} cursor-pointer border-0`}
           >
-            <option value="pendiente">Pendiente</option>
-            <option value="en_curso">En curso</option>
-            <option value="completada">Completada</option>
-            <option value="cancelada">Cancelada</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En progreso">En progreso</option>
+            <option value="Resuelta">Resuelta</option>
+            <option value="Cancelada">Cancelada</option>
           </select>
         );
       },
@@ -81,10 +81,10 @@ export function MisTareasPage() {
             className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             <option value="">Todos los estados</option>
-            <option value="pendiente">Pendiente</option>
-            <option value="en_curso">En curso</option>
-            <option value="completada">Completada</option>
-            <option value="cancelada">Cancelada</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En progreso">En progreso</option>
+            <option value="Resuelta">Resuelta</option>
+            <option value="Cancelada">Cancelada</option>
           </select>
         }
         exportFileName="mis-tareas.csv"

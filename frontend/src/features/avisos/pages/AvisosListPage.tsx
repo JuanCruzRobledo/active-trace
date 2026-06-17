@@ -5,6 +5,7 @@ import { Button } from "@/shared/components/Button";
 import { useAvisos, useEliminarAviso } from "@/features/avisos/hooks/useAvisos";
 import type { AvisoResponse, AvisoFilters } from "@/features/avisos/types/avisos";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
+import { useAuth } from "@/shared/hooks/useAuth";
 
 const select_class =
   "block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500";
@@ -42,6 +43,8 @@ function ActivoBadge({ activo }: { activo: boolean }) {
 
 export function AvisosListPage() {
   const navigate = useNavigate();
+  const { permissions } = useAuth();
+  const puede_gestionar = permissions.includes("avisos:gestionar");
   const [filters, setFilters] = useState<AvisoFilters>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { data, isLoading, isError, error } = useAvisos(filters);
@@ -84,28 +87,32 @@ export function AvisosListPage() {
       sortable: true,
       render: (row) => <ActivoBadge activo={row.activo} />,
     },
-    {
-      key: "id",
-      label: "Acciones",
-      render: (row) => (
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => navigate(`/avisos/${row.id}/editar`)}
-            className="text-sm text-brand-600 hover:text-brand-800"
-          >
-            Editar
-          </button>
-          <button
-            type="button"
-            onClick={() => setDeleteId(row.id)}
-            className="text-sm text-red-600 hover:text-red-800"
-          >
-            Eliminar
-          </button>
-        </div>
-      ),
-    },
+    ...(puede_gestionar
+      ? [
+          {
+            key: "id" as const,
+            label: "Acciones",
+            render: (row: AvisoResponse) => (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/avisos/${row.id}/editar`)}
+                  className="text-sm text-brand-600 hover:text-brand-800"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteId(row.id)}
+                  className="text-sm text-red-600 hover:text-red-800"
+                >
+                  Eliminar
+                </button>
+              </div>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const filter_bar = (
@@ -163,9 +170,11 @@ export function AvisosListPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-800">Avisos</h2>
-        <Link to="/avisos/nuevo">
-          <Button>Nuevo aviso</Button>
-        </Link>
+        {puede_gestionar && (
+          <Link to="/avisos/nuevo">
+            <Button>Nuevo aviso</Button>
+          </Link>
+        )}
       </div>
 
       <FilterableTable

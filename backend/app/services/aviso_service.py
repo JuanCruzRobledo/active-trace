@@ -81,11 +81,40 @@ class AvisoService:
         if total_usuarios > 0:
             porcentaje = round((total_ack / total_usuarios) * 100, 1)
 
+        # Resolver nombres de materia y cohorte
+        materia_nombre = None
+        if aviso.materia_id is not None:
+            try:
+                from app.models.materia import Materia  # noqa: PLC0415
+                result = await self.session.execute(
+                    select(Materia.nombre).where(Materia.id == aviso.materia_id)
+                )
+                row = result.scalar_one_or_none()
+                if row:
+                    materia_nombre = row
+            except Exception:  # noqa: BLE001
+                pass
+
+        cohorte_nombre = None
+        if aviso.cohorte_id is not None:
+            try:
+                from app.models.cohorte import Cohorte  # noqa: PLC0415
+                result = await self.session.execute(
+                    select(Cohorte.nombre).where(Cohorte.id == aviso.cohorte_id)
+                )
+                row = result.scalar_one_or_none()
+                if row:
+                    cohorte_nombre = row
+            except Exception:  # noqa: BLE001
+                pass
+
         return {
             "id": aviso.id,
             "alcance": aviso.alcance.value if hasattr(aviso.alcance, "value") else str(aviso.alcance),
             "materia_id": aviso.materia_id,
+            "materia_nombre": materia_nombre,
             "cohorte_id": aviso.cohorte_id,
+            "cohorte_nombre": cohorte_nombre,
             "rol_destino": aviso.rol_destino,
             "severidad": aviso.severidad.value if hasattr(aviso.severidad, "value") else str(aviso.severidad),
             "titulo": aviso.titulo,

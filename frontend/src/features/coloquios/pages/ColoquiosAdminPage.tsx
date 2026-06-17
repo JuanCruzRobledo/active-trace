@@ -31,7 +31,7 @@ export function ColoquiosAdminPage() {
   const agendaItems = (agenda ?? []) as unknown as Record<string, unknown>[];
 
   const convColumns: Column<Record<string, unknown>>[] = [
-    { key: "titulo", label: "Convocatoria", sortable: true },
+    { key: "instancia", label: "Convocatoria", sortable: true },
     {
       key: "estado",
       label: "Estado",
@@ -112,7 +112,7 @@ export function ColoquiosAdminPage() {
             <option value="">Seleccioná una convocatoria</option>
             {convItems.map((item) => (
               <option key={item.id as string} value={item.id as string}>
-                {item.titulo as string}
+                {item.instancia as string}
               </option>
             ))}
           </select>

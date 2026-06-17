@@ -13,6 +13,15 @@ Crea (si no existen):
   • 3 alumnos (juan, maria, carlos) con calificaciones en las 3 materias
   • Slot recurrente + 4 instancias de encuentro
   • 1 guardia de ejemplo
+  • 3 tareas internas (Pendiente, En progreso, Resuelta)
+  • 2 avisos (1 Global, 1 PorMateria)
+  • 1 evaluación (Coloquio para AM-I)
+  • 3 fechas académicas (Parcial, TP, Coloquio)
+  • 2 programas de materia (AM-I, FIS-I)
+  • 1 comunicación de bienvenida
+  • 1 hilo de mensajería con 2 mensajes
+  • Salarios base (5 roles) + plus (5 combinaciones)
+  • 1 liquidación de ejemplo
 
 Idempotente: se puede ejecutar N veces sin duplicar datos.
 
@@ -41,6 +50,7 @@ from sqlalchemy import select, text
 
 from app.core.config import Settings
 from app.core.database import Base, close_engine, get_session_maker, init_engine
+from app.core.encryption import EncryptionService
 from app.core.security import hash_password
 from app.models.asignacion import Asignacion
 from app.models.calificacion import Calificacion
@@ -49,6 +59,13 @@ from app.models.permiso import Permiso
 from app.models.umbral_materia import UmbralMateria
 from app.models.usuario import Usuario
 from app.models.version_padron import VersionPadron
+from app.models.aviso import Aviso
+from app.models.comunicacion import Comunicacion
+from app.models.evaluacion import Evaluacion
+from app.models.tarea import Tarea
+from app.models.programa_materia import ProgramaMateria
+from app.models.fecha_academica import FechaAcademica
+from app.models.mensaje import MensajeHilo, Mensaje
 from app.repositories.user_repository import UserRepository
 
 # ── Constantes ──────────────────────────────────────────────────────────
@@ -162,6 +179,91 @@ ALUMNOS = [
         "regional": "GBA",
     },
 ]
+
+# ── Datos para seed adicional ───────────────────────────────────────────
+
+TAREAS_SEED = [
+    {
+        "descripcion": "Revisar entregas TP2 de Análisis Matemático I",
+        "estado": "Pendiente",
+        "materia": "AM-I",
+        "asignado": "target@test.com",
+        "asignador": "admin@trace.dev",
+    },
+    {
+        "descripcion": "Actualizar programa de Física I",
+        "estado": "En progreso",
+        "materia": "FIS-I",
+        "asignado": "admin@trace.dev",
+        "asignador": "admin@trace.dev",
+    },
+    {
+        "descripcion": "Preparar material de apoyo para Programación I",
+        "estado": "Resuelta",
+        "materia": "PRO-I",
+        "asignado": "target@test.com",
+        "asignador": "admin@trace.dev",
+    },
+]
+
+AVISOS_SEED = [
+    {
+        "titulo": "Bienvenida al ciclo lectivo 2026",
+        "alcance": "Global",
+        "severidad": "Info",
+        "cuerpo": "Bienvenidos al ciclo lectivo 2026. Recuerden revisar el calendario académico y las fechas importantes del cuatrimestre.",
+        "orden": 1,
+        "requiere_ack": False,
+    },
+    {
+        "titulo": "Recordatorio: parcial de Análisis Matemático I",
+        "alcance": "PorMateria",
+        "severidad": "Advertencia",
+        "materia": "AM-I",
+        "cuerpo": "Se recuerda a los alumnos de AM-I que el primer parcial será la próxima semana. Revisar el programa y los materiales disponibles.",
+        "orden": 2,
+        "requiere_ack": True,
+    },
+]
+
+EVALUACIONES_SEED = [
+    {
+        "materia": "AM-I",
+        "tipo": "Coloquio",
+        "instancia": "Coloquio final AM-I - Julio 2026",
+        "dias_disponibles": 3,
+        "cupos_por_dia": 5,
+        "dias_offset": 30,
+    },
+]
+
+FECHAS_SEED = [
+    {"materia": "AM-I", "tipo": "Parcial", "numero": 1, "periodo": "2026-1", "dias_offset": 14, "titulo": "1er Parcial AM-I"},
+    {"materia": "AM-I", "tipo": "TP", "numero": 1, "periodo": "2026-1", "dias_offset": 21, "titulo": "Entrega TP1 AM-I"},
+    {"materia": "AM-I", "tipo": "Coloquio", "numero": 1, "periodo": "2026-1", "dias_offset": 60, "titulo": "Coloquio final AM-I"},
+]
+
+PROGRAMAS_SEED = [
+    {"materia": "AM-I", "titulo": "Programa de Análisis Matemático I - 2026"},
+    {"materia": "FIS-I", "titulo": "Programa de Física I - 2026"},
+]
+
+SALARIOS_BASE_SEED = [
+    {"rol": "PROFESOR", "monto": 150000.00},
+    {"rol": "COORDINADOR", "monto": 200000.00},
+    {"rol": "TUTOR", "monto": 100000.00},
+    {"rol": "NEXO", "monto": 180000.00},
+    {"rol": "ADMIN", "monto": 250000.00},
+]
+
+SALARIOS_PLUS_SEED = [
+    {"grupo": "PROG", "rol": "PROFESOR", "monto": 25000.00, "desc": "Plus programación - profesor"},
+    {"grupo": "PROG", "rol": "TUTOR", "monto": 15000.00, "desc": "Plus programación - tutor"},
+    {"grupo": "BD", "rol": "PROFESOR", "monto": 25000.00, "desc": "Plus base de datos - profesor"},
+    {"grupo": "MAT", "rol": "PROFESOR", "monto": 25000.00, "desc": "Plus matemática - profesor"},
+    {"grupo": "ING", "rol": "PROFESOR", "monto": 20000.00, "desc": "Plus inglés - profesor"},
+]
+
 
 # ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -835,6 +937,481 @@ async def ensure_guardia(
     print(f"  [+] Guardia de ejemplo creada")
 
 
+# ── Tareas ────────────────────────────────────────────────────────────────
+
+
+async def ensure_tareas(
+    session, materia_ids: dict[str, UUID], usuario_ids: dict[str, UUID]
+) -> None:
+    """Crea tareas de ejemplo si no existen."""
+    from datetime import datetime, timezone
+
+    for td in TAREAS_SEED:
+        mid = materia_ids.get(td["materia"])
+        asignado_uid = usuario_ids.get(td["asignado"])
+        asignador_uid = usuario_ids.get(td["asignador"])
+        if not mid or not asignado_uid or not asignador_uid:
+            print(f"  [!] Tarea '{td['descripcion']}' — faltan referencias, saltando")
+            continue
+
+        result = await session.execute(
+            text("SELECT id FROM tarea WHERE descripcion = :desc AND tenant_id = :tid"),
+            {"desc": td["descripcion"], "tid": DEV_TENANT_ID},
+        )
+        if result.fetchone() is not None:
+            print(f"  [~] Tarea '{td['descripcion'][:40]}...' ya existe")
+            continue
+
+        tid = uuid4()
+        await session.execute(
+            text("""
+                INSERT INTO tarea
+                    (id, tenant_id, materia_id, asignado_a, asignado_por,
+                     estado, descripcion, created_at, updated_at)
+                VALUES
+                    (:id, :tid, :mid, :asig_a, :asig_por,
+                     :est, :desc, now(), now())
+            """),
+            {
+                "id": tid,
+                "tid": DEV_TENANT_ID,
+                "mid": mid,
+                "asig_a": asignado_uid,
+                "asig_por": asignador_uid,
+                "est": td["estado"],
+                "desc": td["descripcion"],
+            },
+        )
+        print(f"  [+] Tarea '{td['descripcion'][:40]}...' creada")
+
+
+# ── Avisos ────────────────────────────────────────────────────────────────
+
+
+async def ensure_avisos(
+    session, materia_ids: dict[str, UUID], cohorte_id: UUID
+) -> None:
+    """Crea avisos de ejemplo si no existen."""
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+
+    for av in AVISOS_SEED:
+        # Checkear unicidad por titulo
+        result = await session.execute(
+            text("SELECT id FROM aviso WHERE titulo = :tit AND tenant_id = :tid"),
+            {"tit": av["titulo"], "tid": DEV_TENANT_ID},
+        )
+        if result.fetchone() is not None:
+            print(f"  [~] Aviso '{av['titulo']}' ya existe")
+            continue
+
+        mid = materia_ids.get(av.get("materia", "")) if av.get("materia") else None
+
+        aviso = Aviso(
+            tenant_id=DEV_TENANT_ID,
+            alcance=av["alcance"],
+            materia_id=mid,
+            cohorte_id=cohorte_id if av["alcance"] in ("PorMateria", "PorCohorte") else None,
+            severidad=av["severidad"],
+            titulo=av["titulo"],
+            cuerpo=av["cuerpo"],
+            inicio_en=now,
+            fin_en=now + timedelta(days=30),
+            orden=av["orden"],
+            activo=True,
+            requiere_ack=av["requiere_ack"],
+        )
+        session.add(aviso)
+        await session.flush()
+        print(f"  [+] Aviso '{av['titulo']}' creado")
+
+
+# ── Evaluaciones ──────────────────────────────────────────────────────────
+
+
+async def ensure_evaluaciones(
+    session, materia_ids: dict[str, UUID], cohorte_id: UUID
+) -> None:
+    """Crea evaluaciones de ejemplo si no existen."""
+    from datetime import date, timedelta
+
+    today = date.today()
+
+    for ev in EVALUACIONES_SEED:
+        mid = materia_ids.get(ev["materia"])
+        if not mid:
+            continue
+
+        result = await session.execute(
+            text("""SELECT id FROM evaluacion
+                    WHERE materia_id = :mid AND cohorte_id = :coid
+                      AND tipo = :tipo AND tenant_id = :tid"""),
+            {"mid": mid, "coid": cohorte_id, "tipo": ev["tipo"], "tid": DEV_TENANT_ID},
+        )
+        if result.fetchone() is not None:
+            print(f"  [~] Evaluación '{ev['instancia']}' ya existe")
+            continue
+
+        eid = uuid4()
+        await session.execute(
+            text("""
+                INSERT INTO evaluacion
+                    (id, tenant_id, materia_id, cohorte_id, tipo, instancia,
+                     dias_disponibles, cupos_por_dia, fecha_inicio, fecha_fin, estado,
+                     created_at, updated_at)
+                VALUES
+                    (:id, :tid, :mid, :coid, :tipo, :inst,
+                     :dias, :cupos, :f_ini, :f_fin, 'Activa',
+                     now(), now())
+            """),
+            {
+                "id": eid,
+                "tid": DEV_TENANT_ID,
+                "mid": mid,
+                "coid": cohorte_id,
+                "tipo": ev["tipo"],
+                "inst": ev["instancia"],
+                "dias": ev["dias_disponibles"],
+                "cupos": ev["cupos_por_dia"],
+                "f_ini": today,
+                "f_fin": today + timedelta(days=ev["dias_offset"]),
+            },
+        )
+        print(f"  [+] Evaluación '{ev['instancia']}' creada")
+
+
+# ── Fechas académicas ─────────────────────────────────────────────────────
+
+
+async def ensure_fechas_academicas(
+    session, materia_ids: dict[str, UUID], cohorte_id: UUID
+) -> None:
+    """Crea fechas académicas de ejemplo si no existen."""
+    from datetime import date, timedelta
+
+    today = date.today()
+
+    for fd in FECHAS_SEED:
+        mid = materia_ids.get(fd["materia"])
+        if not mid:
+            continue
+
+        result = await session.execute(
+            text("""SELECT id FROM fecha_academica
+                    WHERE materia_id = :mid AND cohorte_id = :coid
+                      AND tipo = :tipo AND numero = :num AND tenant_id = :tid"""),
+            {"mid": mid, "coid": cohorte_id, "tipo": fd["tipo"], "num": fd["numero"], "tid": DEV_TENANT_ID},
+        )
+        if result.fetchone() is not None:
+            print(f"  [~] Fecha académica '{fd['titulo']}' ya existe")
+            continue
+
+        faid = uuid4()
+        await session.execute(
+            text("""
+                INSERT INTO fecha_academica
+                    (id, tenant_id, materia_id, cohorte_id, tipo, numero,
+                     periodo, fecha, titulo, created_at, updated_at)
+                VALUES
+                    (:id, :tid, :mid, :coid, :tipo, :num,
+                     :per, :fecha, :tit, now(), now())
+            """),
+            {
+                "id": faid,
+                "tid": DEV_TENANT_ID,
+                "mid": mid,
+                "coid": cohorte_id,
+                "tipo": fd["tipo"],
+                "num": fd["numero"],
+                "per": fd["periodo"],
+                "fecha": today + timedelta(days=fd["dias_offset"]),
+                "tit": fd["titulo"],
+            },
+        )
+        print(f"  [+] Fecha académica '{fd['titulo']}' creada")
+
+
+# ── Programas de materia ──────────────────────────────────────────────────
+
+
+async def ensure_programas(
+    session, materia_ids: dict[str, UUID], carrera_id: UUID, cohorte_id: UUID
+) -> None:
+    """Crea programas de materia de ejemplo si no existen."""
+    from datetime import datetime, timezone
+
+    for prog in PROGRAMAS_SEED:
+        mid = materia_ids.get(prog["materia"])
+        if not mid:
+            continue
+
+        result = await session.execute(
+            text("""SELECT id FROM programa_materia
+                    WHERE materia_id = :mid AND carrera_id = :cid
+                      AND cohorte_id = :coid AND tenant_id = :tid"""),
+            {"mid": mid, "cid": carrera_id, "coid": cohorte_id, "tid": DEV_TENANT_ID},
+        )
+        if result.fetchone() is not None:
+            print(f"  [~] Programa '{prog['titulo']}' ya existe")
+            continue
+
+        pid = uuid4()
+        await session.execute(
+            text("""
+                INSERT INTO programa_materia
+                    (id, tenant_id, materia_id, carrera_id, cohorte_id,
+                     titulo, referencia_archivo, cargado_at, created_at, updated_at)
+                VALUES
+                    (:id, :tid, :mid, :cid, :coid,
+                     :tit, :ref, now(), now(), now())
+            """),
+            {
+                "id": pid,
+                "tid": DEV_TENANT_ID,
+                "mid": mid,
+                "cid": carrera_id,
+                "coid": cohorte_id,
+                "tit": prog["titulo"],
+                "ref": uuid4(),
+            },
+        )
+        print(f"  [+] Programa '{prog['titulo']}' creado")
+
+
+# ── Comunicaciones ────────────────────────────────────────────────────────
+
+
+async def ensure_comunicaciones(
+    session, materia_ids: dict[str, UUID], usuario_ids: dict[str, UUID],
+    encryption_key: str,
+) -> None:
+    """Crea comunicaciones de ejemplo si no existen."""
+    from datetime import datetime, timezone
+
+    admin_uid = usuario_ids.get("admin@trace.dev")
+    juan_uid = usuario_ids.get("juan@test.com")
+    if not admin_uid or not juan_uid:
+        print("  [!] Faltan usuarios para comunicaciones, saltando")
+        return
+
+    result = await session.execute(
+        text("SELECT id FROM comunicaciones WHERE asunto = :asunto AND tenant_id = :tid"),
+        {"asunto": "Bienvenida al sistema trace", "tid": DEV_TENANT_ID},
+    )
+    if result.fetchone() is not None:
+        print("  [~] Comunicación de bienvenida ya existe")
+        return
+
+    # Encriptamos el destinatario manualmente (raw SQL evita el ORM Enum)
+    crypto = EncryptionService(encryption_key)
+    destinatario_enc = crypto.encrypt("juan@test.com")
+
+    cid = uuid4()
+    await session.execute(
+        text("""
+            INSERT INTO comunicaciones
+                (id, tenant_id, enviado_por_id, materia_id, destinatario,
+                 asunto, cuerpo, estado, lote_id, created_at, updated_at)
+            VALUES
+                (:id, :tid, :ep, :mid, :dest,
+                 :asunto, :cuerpo, 'Pendiente', :lote, now(), now())
+        """),
+        {
+            "id": cid,
+            "tid": DEV_TENANT_ID,
+            "ep": admin_uid,
+            "mid": materia_ids.get("AM-I"),
+            "dest": destinatario_enc,
+            "asunto": "Bienvenida al sistema trace",
+            "cuerpo": "Te damos la bienvenida al sistema de gestión académica trace. "
+                      "Recordá que podés consultar tus calificaciones, "
+                      "reservar turnos de coloquio y recibir avisos institucionales.",
+            "lote": uuid4(),
+        },
+    )
+    print("  [+] Comunicación de bienvenida creada")
+
+
+# ── Mensajería ────────────────────────────────────────────────────────────
+
+
+async def ensure_mensajeria(
+    session, usuario_ids: dict[str, UUID]
+) -> None:
+    """Crea un hilo de mensajería de ejemplo si no existen."""
+    from datetime import datetime, timezone
+
+    admin_uid = usuario_ids.get("admin@trace.dev")
+    target_uid = usuario_ids.get("target@test.com")
+    if not admin_uid or not target_uid:
+        print("  [!] Faltan usuarios para mensajería, saltando")
+        return
+
+    result = await session.execute(
+        text("SELECT id FROM mensaje_hilo WHERE asunto = :asunto AND tenant_id = :tid"),
+        {"asunto": "Consulta sobre programación de AM-I", "tid": DEV_TENANT_ID},
+    )
+    if result.fetchone() is not None:
+        print("  [~] Hilo de mensajería ya existe")
+        return
+
+    hilo_id = uuid4()
+    await session.execute(
+        text("""
+            INSERT INTO mensaje_hilo
+                (id, tenant_id, asunto, usuario_a_id, usuario_b_id, created_at, updated_at)
+            VALUES
+                (:id, :tid, :asunto, :ua, :ub, now(), now())
+        """),
+        {
+            "id": hilo_id,
+            "tid": DEV_TENANT_ID,
+            "asunto": "Consulta sobre programación de AM-I",
+            "ua": admin_uid,
+            "ub": target_uid,
+        },
+    )
+    print("  [+] Hilo de mensajería creado")
+
+    # Mensaje 1: admin -> target
+    msg1_id = uuid4()
+    await session.execute(
+        text("""
+            INSERT INTO mensaje
+                (id, tenant_id, hilo_id, autor_id, cuerpo, creado_at)
+            VALUES
+                (:id, :tid, :hilo, :autor, :cuerpo, now())
+        """),
+        {
+            "id": msg1_id,
+            "tid": DEV_TENANT_ID,
+            "hilo": hilo_id,
+            "autor": admin_uid,
+            "cuerpo": "Hola, ¿podrías revisar la programación de las clases de AM-I para la próxima semana? Necesito confirmar los horarios.",
+        },
+    )
+    print("  [+] Mensaje 1 del hilo creado")
+
+    # Mensaje 2: target -> admin
+    msg2_id = uuid4()
+    await session.execute(
+        text("""
+            INSERT INTO mensaje
+                (id, tenant_id, hilo_id, autor_id, cuerpo, creado_at)
+            VALUES
+                (:id, :tid, :hilo, :autor, :cuerpo, now() + interval '1 hour')
+        """),
+        {
+            "id": msg2_id,
+            "tid": DEV_TENANT_ID,
+            "hilo": hilo_id,
+            "autor": target_uid,
+            "cuerpo": "Hola, sí. Las clases de AM-I están programadas los lunes de 18 a 20hs. Ya subí el cronograma actualizado al sistema.",
+        },
+    )
+    print("  [+] Mensaje 2 del hilo creado")
+
+
+# ── Salarios y Liquidaciones ──────────────────────────────────────────────
+
+
+async def ensure_salarios(session) -> None:
+    """Crea los salarios base y plus de ejemplo si no existen."""
+    # Salarios base
+    for sb in SALARIOS_BASE_SEED:
+        result = await session.execute(
+            text("""SELECT id FROM salario_base
+                    WHERE rol = :rol AND tenant_id = :tid
+                      AND hasta IS NULL"""),
+            {"rol": sb["rol"], "tid": DEV_TENANT_ID},
+        )
+        if result.fetchone() is not None:
+            print(f"  [~] Salario base para {sb['rol']} ya existe")
+            continue
+
+        sbid = uuid4()
+        await session.execute(
+            text("""
+                INSERT INTO salario_base
+                    (id, tenant_id, rol, monto, desde, created_at, updated_at)
+                VALUES
+                    (:id, :tid, :rol, :monto, now()::date, now(), now())
+            """),
+            {"id": sbid, "tid": DEV_TENANT_ID, "rol": sb["rol"], "monto": sb["monto"]},
+        )
+        print(f"  [+] Salario base para {sb['rol']}: ${sb['monto']:,.0f}")
+
+    # Salarios plus
+    for sp in SALARIOS_PLUS_SEED:
+        result = await session.execute(
+            text("""SELECT id FROM salario_plus
+                    WHERE grupo = :grupo AND rol = :rol AND tenant_id = :tid
+                      AND hasta IS NULL"""),
+            {"grupo": sp["grupo"], "rol": sp["rol"], "tid": DEV_TENANT_ID},
+        )
+        if result.fetchone() is not None:
+            print(f"  [~] Salario plus grupo={sp['grupo']} rol={sp['rol']} ya existe")
+            continue
+
+        spid = uuid4()
+        await session.execute(
+            text("""
+                INSERT INTO salario_plus
+                    (id, tenant_id, grupo, rol, descripcion, monto, desde, created_at, updated_at)
+                VALUES
+                    (:id, :tid, :grupo, :rol, :desc, :monto, now()::date, now(), now())
+            """),
+            {
+                "id": spid,
+                "tid": DEV_TENANT_ID,
+                "grupo": sp["grupo"],
+                "rol": sp["rol"],
+                "desc": sp.get("desc", ""),
+                "monto": sp["monto"],
+            },
+        )
+        print(f"  [+] Salario plus grupo={sp['grupo']} rol={sp['rol']}: ${sp['monto']:,.0f}")
+
+
+async def ensure_liquidacion(
+    session, cohorte_id: UUID, usuario_ids: dict[str, UUID]
+) -> None:
+    """Crea una liquidación de ejemplo si no existe."""
+    admin_uid = usuario_ids.get("admin@trace.dev")
+    if not admin_uid:
+        print("  [!] No se encontró admin para liquidación, saltando")
+        return
+
+    result = await session.execute(
+        text("""SELECT id FROM liquidacion
+                WHERE periodo = '2026-06' AND usuario_id = :uid
+                  AND tenant_id = :tid AND deleted_at IS NULL"""),
+        {"uid": admin_uid, "tid": DEV_TENANT_ID},
+    )
+    if result.fetchone() is not None:
+        print("  [~] Liquidación de ejemplo ya existe")
+        return
+
+    lid = uuid4()
+    await session.execute(
+        text("""
+            INSERT INTO liquidacion
+                (id, tenant_id, cohorte_id, periodo, usuario_id, rol,
+                 comisiones, monto_base, monto_plus, total,
+                 es_nexo, excluido_por_factura, estado,
+                 created_at, updated_at)
+            VALUES
+                (:id, :tid, :coid, '2026-06', :uid, 'PROFESOR',
+                 '["A", "B"]', 150000, 0, 150000,
+                 false, false, 'Abierta',
+                 now(), now())
+        """),
+        {"id": lid, "tid": DEV_TENANT_ID, "coid": cohorte_id, "uid": admin_uid},
+    )
+    print("  [+] Liquidación de ejemplo creada (admin@trace.dev, periodo 2026-06, $150.000)")
+
+
 # ── Main ────────────────────────────────────────────────────────────────
 
 
@@ -894,18 +1471,31 @@ async def main() -> None:
             mid = await ensure_materia(session, carrera_id, codigo, nombre)
             materia_ids[codigo] = mid
 
-        # Obtener UUID de la tabla `usuario` para target y admin
-        target_usuario = await session.execute(
-            text("SELECT id FROM usuario WHERE auth_user_id = :auid"),
-            {"auid": main_user_ids.get("target@test.com")},
-        )
-        target_usuario_row = target_usuario.fetchone()
+        # Obtener UUID de la tabla `usuario` para todos los usuarios
+        usuario_ids: dict[str, UUID] = {}  # email -> usuario.id
+        for email in ("admin@trace.dev", "target@test.com", "admin2@test.com"):
+            row = (
+                await session.execute(
+                    text("SELECT id FROM usuario WHERE auth_user_id = :auid"),
+                    {"auid": main_user_ids.get(email)},
+                )
+            ).fetchone()
+            if row:
+                usuario_ids[email] = row[0]
 
-        admin_usuario = await session.execute(
-            text("SELECT id FROM usuario WHERE auth_user_id = :auid"),
-            {"auid": main_user_ids.get("admin@trace.dev")},
-        )
-        admin_usuario_row = admin_usuario.fetchone()
+        target_usuario_row = (
+            await session.execute(
+                text("SELECT id FROM usuario WHERE auth_user_id = :auid"),
+                {"auid": main_user_ids.get("target@test.com")},
+            )
+        ).fetchone()
+
+        admin_usuario_row = (
+            await session.execute(
+                text("SELECT id FROM usuario WHERE auth_user_id = :auid"),
+                {"auid": main_user_ids.get("admin@trace.dev")},
+            )
+        ).fetchone()
 
         # ── 6. Asignaciones profesor + umbrales ──────────────────────
         print()
@@ -937,6 +1527,7 @@ async def main() -> None:
         alumno_usuarios: list[dict] = []
         for alumno in ALUMNOS:
             auth_uid, usuario_id = await ensure_alumno_user(session, alumno, role_ids)
+            usuario_ids[alumno["email"]] = usuario_id
             alumno_usuarios.append({
                 "auth_uid": auth_uid,
                 "usuario_id": usuario_id,
@@ -1015,6 +1606,39 @@ async def main() -> None:
             asignacion_id=target_asignacion_id if target_usuario_row else None,
         )
 
+        # ── 12. Tareas ──────────────────────────────────────────────
+        print()
+        await ensure_tareas(session, materia_ids, usuario_ids)
+
+        # ── 13. Avisos ──────────────────────────────────────────────
+        print()
+        await ensure_avisos(session, materia_ids, cohorte_id)
+
+        # ── 14. Evaluaciones ────────────────────────────────────────
+        print()
+        await ensure_evaluaciones(session, materia_ids, cohorte_id)
+
+        # ── 15. Fechas académicas ───────────────────────────────────
+        print()
+        await ensure_fechas_academicas(session, materia_ids, cohorte_id)
+
+        # ── 16. Programas de materia ────────────────────────────────
+        print()
+        await ensure_programas(session, materia_ids, carrera_id, cohorte_id)
+
+        # ── 17. Comunicaciones ──────────────────────────────────────
+        print()
+        await ensure_comunicaciones(session, materia_ids, usuario_ids, settings.ENCRYPTION_KEY)
+
+        # ── 18. Mensajería ─────────────────────────────────────────
+        print()
+        await ensure_mensajeria(session, usuario_ids)
+
+        # ── 19. Salarios y Liquidaciones ────────────────────────────
+        print()
+        await ensure_salarios(session)
+        await ensure_liquidacion(session, cohorte_id, usuario_ids)
+
         # ── Commit ───────────────────────────────────────────────────
         await session.commit()
 
@@ -1031,6 +1655,15 @@ async def main() -> None:
     print(f"  • admin@trace.dev asignado a las {len(MATERIAS_SEED)} materias (PROFESOR)")
     print(f"  • Slot recurrente + 4 instancias de encuentro")
     print(f"  • 1 guardia de ejemplo")
+    print(f"  • {len(TAREAS_SEED)} tareas internas")
+    print(f"  • {len(AVISOS_SEED)} avisos")
+    print(f"  • {len(EVALUACIONES_SEED)} evaluación (coloquio)")
+    print(f"  • {len(FECHAS_SEED)} fechas académicas")
+    print(f"  • {len(PROGRAMAS_SEED)} programas de materia")
+    print(f"  • 1 comunicación")
+    print(f"  • 1 hilo de mensajería (2 mensajes)")
+    print(f"  • {len(SALARIOS_BASE_SEED)} salarios base + {len(SALARIOS_PLUS_SEED)} plus")
+    print(f"  • 1 liquidación de ejemplo")
     print()
     print("Usuarios disponibles:")
     print("  admin@trace.dev / Admin123456!  (ADMIN + PROFESOR)")

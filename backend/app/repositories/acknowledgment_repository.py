@@ -48,7 +48,7 @@ class AcknowledgmentRepository(BaseRepository[AcknowledgmentAviso]):
                 confirmado_at=ahora,
             )
             .on_conflict_do_nothing(
-                constraint="uq_acknowledgment_aviso_usuario"
+                index_elements=["aviso_id", "usuario_id"]
             )
         )
         result = await self.session.execute(stmt)

@@ -2,13 +2,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchMetricas,
   fetchConvocatorias,
+  fetchConvocatoriaById,
   crearConvocatoria,
+  actualizarConvocatoria,
   cerrarConvocatoria,
   importarAlumnos,
   fetchAgenda,
 } from "@/features/coloquios/services/coloquios";
 import type {
   EvaluacionCreate,
+  EvaluacionUpdate,
   ImportarAlumnosRequest,
   ConvocatoriasFilters,
 } from "@/features/coloquios/types/coloquios";
@@ -31,6 +34,25 @@ export function useCrearConvocatoria() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: EvaluacionCreate) => crearConvocatoria(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["coloquios"] });
+    },
+  });
+}
+
+export function useConvocatoriaById(id: string | undefined) {
+  return useQuery({
+    queryKey: ["coloquios", "convocatorias", id],
+    queryFn: () => fetchConvocatoriaById(id!),
+    enabled: !!id,
+  });
+}
+
+export function useActualizarConvocatoria() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: EvaluacionUpdate }) =>
+      actualizarConvocatoria(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coloquios"] });
     },

@@ -157,6 +157,39 @@ async def listar_todas(
     )
 
 
+# ── Listar docentes (para asignar tareas) ──────────────────────────────────
+
+
+@router.get("/docentes")
+async def listar_docentes(
+    db: AsyncSession = Depends(get_db),
+    ctx: UserContext = Depends(require_permission("tareas:gestionar")),
+) -> list[dict[str, str]]:
+    """Lista usuarios del tenant con datos mínimos (id, nombre, apellidos).
+
+    Endpoint específico para el selector de docentes al asignar tareas.
+    No requiere ``admin:gestionar-usuarios`` — solo ``tareas:gestionar``.
+    """
+    stmt = select(
+        Usuario.id,
+        Usuario.nombre,
+        Usuario.apellidos,
+    ).where(
+        Usuario.tenant_id == ctx.tenant_id,
+        Usuario.deleted_at.is_(None),
+    ).order_by(Usuario.apellidos, Usuario.nombre)
+    result = await db.execute(stmt)
+    rows = result.all()
+    return [
+        {
+            "id": str(row.id),
+            "nombre": row.nombre,
+            "apellidos": row.apellidos,
+        }
+        for row in rows
+    ]
+
+
 # ── Operaciones sobre tarea individual ─────────────────────────────────────
 
 

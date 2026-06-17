@@ -11,6 +11,7 @@ from uuid import UUID
 from sqlalchemy import and_, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.enums import EstadoEncuentro
 from app.models.instancia_encuentro import InstanciaEncuentro
 from app.repositories.base import BaseRepository
 
@@ -69,7 +70,11 @@ class InstanciaEncuentroRepository(BaseRepository[InstanciaEncuentro]):
         if hasta is not None:
             conditions.append(self.model.fecha <= hasta)
         if estado is not None:
-            conditions.append(self.model.estado == estado)
+            try:
+                _ = EstadoEncuentro(estado)  # validate string matches enum
+                conditions.append(self.model.estado == estado)
+            except ValueError:
+                pass  # invalid estado → skip filter (return all)
         if usuario_id is not None:
             # TODO: join con slot_encuentro para filtrar por asignacion_id
             pass

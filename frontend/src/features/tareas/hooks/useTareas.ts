@@ -6,6 +6,7 @@ import {
   crearTarea,
   actualizarEstadoTarea,
   agregarComentario,
+  fetchDocentes,
 } from "@/features/tareas/services/tareas";
 import type {
   TareaCreate,
@@ -70,5 +71,13 @@ export function useAgregarComentario() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tareas"] });
     },
+  });
+}
+
+export function useDocentes() {
+  return useQuery({
+    queryKey: ["tareas", "docentes"],
+    queryFn: fetchDocentes,
+    staleTime: 60_000,
   });
 }

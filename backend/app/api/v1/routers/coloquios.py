@@ -129,6 +129,23 @@ async def listar_convocatorias(
     )
 
 
+@router.get("/convocatorias/{evaluacion_id}")
+async def obtener_convocatoria(
+    evaluacion_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    ctx: UserContext = Depends(require_permission("coloquios:gestionar")),
+) -> dict:
+    """Obtiene una convocatoria por ID."""
+    service = _build_service(db, ctx)
+    try:
+        return await service.obtener_convocatoria(evaluacion_id)
+    except BusinessError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+
 @router.patch("/convocatorias/{evaluacion_id}")
 async def editar_convocatoria(
     evaluacion_id: UUID,

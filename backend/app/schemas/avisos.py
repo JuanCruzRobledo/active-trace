@@ -59,7 +59,9 @@ class AvisoResponse(BaseModel):
     id: UUID
     alcance: str
     materia_id: UUID | None = None
+    materia_nombre: str | None = None
     cohorte_id: UUID | None = None
+    cohorte_nombre: str | None = None
     rol_destino: str | None = None
     severidad: str
     titulo: str

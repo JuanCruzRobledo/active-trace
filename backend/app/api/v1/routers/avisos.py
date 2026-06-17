@@ -142,9 +142,9 @@ async def listar_avisos(
     severidad: str | None = Query(None),
     activo: bool | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    ctx: UserContext = Depends(require_permission("avisos:gestionar")),
+    ctx: UserContext = Depends(require_permission("avisos:ver")),
 ) -> dict:
-    """Lista avisos del tenant con filtros opcionales."""
+    """Lista avisos del tenant con filtros opcionales (solo lectura)."""
     service = _build_service(db, ctx)
     return await service.listar_avisos(
         materia_id=materia_id,
@@ -242,6 +242,10 @@ async def acknowledge_aviso(
 ) -> dict:
     """Confirma la lectura de un aviso que requiere acuse."""
     service = _build_service(db, ctx)
+    # Resolver usuario_id: ctx.user_id es auth_user_id (users.id),
+    # pero el modelo AcknowledgmentAviso FK referencia usuario.id
+    usuario_id = await _resolve_usuario_id(db, ctx.user_id)
+    service.actor_id = usuario_id
     try:
         return await service.acknowledge(aviso_id)
     except BusinessError as exc:

@@ -24,7 +24,7 @@ export function ConvocatoriaListPage() {
   const items = (data?.items ?? []) as unknown as Record<string, unknown>[];
 
   const columns: Column<Record<string, unknown>>[] = [
-    { key: "titulo", label: "Título", sortable: true },
+    { key: "instancia", label: "Convocatoria", sortable: true },
     {
       key: "estado",
       label: "Estado",
@@ -62,7 +62,7 @@ export function ConvocatoriaListPage() {
           <Button
             type="button"
             variant="ghost"
-            onClick={() => navigate(`/coloquios/convocatorias/${row.id}`)}
+            onClick={() => navigate(`/coloquios/convocatorias/${row.id}/editar`)}
           >
             Editar
           </Button>

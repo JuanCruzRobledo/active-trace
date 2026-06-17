@@ -112,13 +112,13 @@ export function AvisoDetailPage() {
           {aviso.materia_id && (
             <div>
               <span className="font-medium text-gray-600">Materia:</span>{" "}
-              {aviso.materia_id}
+              {aviso.materia_nombre ?? aviso.materia_id}
             </div>
           )}
           {aviso.cohorte_id && (
             <div>
               <span className="font-medium text-gray-600">Cohorte:</span>{" "}
-              {aviso.cohorte_id}
+              {aviso.cohorte_nombre ?? aviso.cohorte_id}
             </div>
           )}
           {aviso.rol_destino && (

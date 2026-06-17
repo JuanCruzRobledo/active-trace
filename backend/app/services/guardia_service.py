@@ -73,14 +73,14 @@ class GuardiaService:
 
     # ── Asignación lookup ────────────────────────────────────────────────
 
-    async def _get_mi_asignacion_id(self) -> UUID:
+    async def _get_mi_asignacion_id(self) -> UUID | None:
         """Retorna el ``asignacion.id`` del usuario actual (actor_id).
 
         Busca la asignación activa (más reciente) del usuario en el tenant
-        actual.  Si no existe, lanza BusinessError.
+        actual.  Si no existe, retorna ``None``.
 
         Returns:
-            UUID de la asignación.
+            UUID de la asignación, o ``None`` si no tiene asignación activa.
         """
         stmt = (
             sa_select(Asignacion.id)
@@ -94,11 +94,7 @@ class GuardiaService:
         )
         result = await self.session.execute(stmt)
         row = result.scalar_one_or_none()
-        if row is None:
-            raise BusinessError(
-                "No se encontró una asignación activa para el usuario actual"
-            )
-        return row
+        return row  # None si no hay asignación activa
 
     # ── Validación de alcance ─────────────────────────────────────────────
 
@@ -123,7 +119,7 @@ class GuardiaService:
 
         if not self._es_admin:
             mi_asignacion_id = await self._get_mi_asignacion_id()
-            if guardia.asignacion_id != mi_asignacion_id:
+            if mi_asignacion_id is None or guardia.asignacion_id != mi_asignacion_id:
                 raise BusinessError("No tiene permisos para modificar esta guardia")
 
         return guardia

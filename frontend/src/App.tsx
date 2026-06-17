@@ -177,7 +177,7 @@ export function App() {
             <Route
               path="avisos"
               element={
-                <RequirePermission permission="avisos:gestionar">
+                <RequirePermission permission="avisos:ver">
                   <AvisosListPage />
                 </RequirePermission>
               }
@@ -193,7 +193,7 @@ export function App() {
             <Route
               path="avisos/:id"
               element={
-                <RequirePermission permission="avisos:gestionar">
+                <RequirePermission permission="avisos:ver">
                   <AvisoDetailPage />
                 </RequirePermission>
               }
@@ -252,6 +252,7 @@ export function App() {
               <Route path="panel" element={<ColoquiosPanelPage />} />
               <Route path="convocatorias" element={<ConvocatoriaListPage />} />
               <Route path="convocatorias/nueva" element={<ConvocatoriaFormPage />} />
+              <Route path="convocatorias/:id/editar" element={<ConvocatoriaFormPage />} />
               <Route path="admin" element={<ColoquiosAdminPage />} />
             </Route>
 

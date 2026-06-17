@@ -8,17 +8,17 @@ import type { TareasFilters } from "@/features/tareas/types/tareas";
 import type { Column } from "@/shared/components/FilterableTable";
 
 const estado_colors: Record<string, string> = {
-  pendiente: "bg-yellow-100 text-yellow-800",
-  en_curso: "bg-blue-100 text-blue-800",
-  completada: "bg-green-100 text-green-800",
-  cancelada: "bg-gray-100 text-gray-600",
+  Pendiente: "bg-yellow-100 text-yellow-800",
+  "En progreso": "bg-blue-100 text-blue-800",
+  Resuelta: "bg-green-100 text-green-800",
+  Cancelada: "bg-gray-100 text-gray-600",
 };
 
 const estado_labels: Record<string, string> = {
-  pendiente: "Pendiente",
-  en_curso: "En curso",
-  completada: "Completada",
-  cancelada: "Cancelada",
+  Pendiente: "Pendiente",
+  "En progreso": "En progreso",
+  Resuelta: "Resuelta",
+  Cancelada: "Cancelada",
 };
 
 export function TareasAdminPage() {
@@ -41,21 +41,29 @@ export function TareasAdminPage() {
       ),
     },
     {
-      key: "asignado_a",
+      key: "asignado_a_nombre",
       label: "Asignado a",
       render: (row) => (
-        <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs">
-          {(row.asignado_a as string)?.slice(0, 8)}...
-        </code>
+        <span className="text-sm text-gray-700">
+          {(row.asignado_a_nombre as string) ?? (
+            <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs">
+              {(row.asignado_a as string)?.slice(0, 8)}...
+            </code>
+          )}
+        </span>
       ),
     },
     {
-      key: "asignado_por",
+      key: "asignado_por_nombre",
       label: "Asignado por",
       render: (row) => (
-        <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs">
-          {(row.asignado_por as string)?.slice(0, 8)}...
-        </code>
+        <span className="text-sm text-gray-700">
+          {(row.asignado_por_nombre as string) ?? (
+            <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs">
+              {(row.asignado_por as string)?.slice(0, 8)}...
+            </code>
+          )}
+        </span>
       ),
     },
     {
@@ -128,10 +136,10 @@ export function TareasAdminPage() {
               className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">Todos los estados</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="en_curso">En curso</option>
-              <option value="completada">Completada</option>
-              <option value="cancelada">Cancelada</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="En progreso">En progreso</option>
+              <option value="Resuelta">Resuelta</option>
+              <option value="Cancelada">Cancelada</option>
             </select>
             {hasFilters && (
               <button

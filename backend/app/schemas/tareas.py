@@ -11,6 +11,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from app.models.enums import EstadoTarea
+
 
 # ── Tarea ──────────────────────────────────────────────────────────────────
 
@@ -46,7 +48,7 @@ class TareaUpdate(BaseModel):
 class TareaEstadoUpdate(BaseModel):
     """Schema para cambiar el estado de una tarea."""
 
-    nuevo_estado: str
+    nuevo_estado: EstadoTarea
 
     model_config = ConfigDict(extra="forbid")
 

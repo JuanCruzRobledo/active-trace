@@ -6,15 +6,9 @@ import type { InstanciasFilters } from "@/features/encuentros/types/encuentros";
 import type { Column } from "@/shared/components/FilterableTable";
 
 const estado_styles: Record<string, string> = {
-  realizado: "bg-green-100 text-green-800 ring-green-600",
-  pendiente: "bg-yellow-100 text-yellow-800 ring-yellow-600",
-  cancelado: "bg-red-100 text-red-800 ring-red-600",
-};
-
-const estado_labels: Record<string, string> = {
-  realizado: "Realizado",
-  pendiente: "Pendiente",
-  cancelado: "Cancelado",
+  Programado: "bg-yellow-100 text-yellow-800 ring-yellow-600",
+  Realizado: "bg-green-100 text-green-800 ring-green-600",
+  Cancelado: "bg-red-100 text-red-800 ring-red-600",
 };
 
 export function EncuentrosAdminPage() {
@@ -44,21 +38,21 @@ export function EncuentrosAdminPage() {
       label: "Estado",
       sortable: true,
       render: (row) => {
-        const est = (row.estado as string) ?? "pendiente";
+        const est = (row.estado as string) ?? "Programado";
         return (
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${estado_styles[est] ?? "bg-gray-100 text-gray-800"}`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                est === "realizado"
+                est === "Realizado"
                   ? "bg-green-500"
-                  : est === "cancelado"
+                  : est === "Cancelado"
                     ? "bg-red-500"
                     : "bg-yellow-500"
               }`}
             />
-            {estado_labels[est] ?? est}
+            {est}
           </span>
         );
       },
@@ -128,9 +122,9 @@ export function EncuentrosAdminPage() {
               className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="">Todos</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="realizado">Realizado</option>
-              <option value="cancelado">Cancelado</option>
+              <option value="Programado">Programado</option>
+              <option value="Realizado">Realizado</option>
+              <option value="Cancelado">Cancelado</option>
             </select>
             {hasFilters && (
               <button

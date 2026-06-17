@@ -19,6 +19,9 @@ from app.core.dependencies import (
     get_db,
     require_permission,
 )
+
+# Endpoints de LECTURA (GET) permitidos para cualquier usuario autenticado.
+# Endpoints de ESCRITURA (POST/PATCH/DELETE) requieren estructura:gestionar.
 from app.core.exceptions import BusinessError
 from app.schemas.carrera import CarreraCreate, CarreraResponse, CarreraUpdate
 from app.schemas.cohorte import CohorteCreate, CohorteResponse, CohorteUpdate
@@ -122,13 +125,12 @@ async def crear_carrera(
 
 @router.get(
     "/carreras",
-    dependencies=[Depends(require_permission("estructura:gestionar"))],
 )
 async def listar_carreras(
     current_user: UserContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[CarreraResponse]:
-    """Lista todas las carreras del tenant."""
+    """Lista todas las carreras del tenant (solo autenticación)."""
     svc = _build_carrera_service(db, current_user.tenant_id)
     carreras = await svc.listar()
     return [_carrera_to_response(c) for c in carreras]
@@ -136,14 +138,13 @@ async def listar_carreras(
 
 @router.get(
     "/carreras/{carrera_id}",
-    dependencies=[Depends(require_permission("estructura:gestionar"))],
 )
 async def obtener_carrera(
     carrera_id: UUID,
     current_user: UserContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> CarreraResponse:
-    """Obtiene una carrera por ID."""
+    """Obtiene una carrera por ID (solo autenticación)."""
     svc = _build_carrera_service(db, current_user.tenant_id)
     carrera = await svc.obtener(carrera_id)
     if carrera is None:
@@ -210,13 +211,12 @@ async def crear_materia(
 
 @router.get(
     "/materias",
-    dependencies=[Depends(require_permission("estructura:gestionar"))],
 )
 async def listar_materias(
     current_user: UserContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[MateriaResponse]:
-    """Lista todas las materias del tenant."""
+    """Lista todas las materias del tenant (solo autenticación)."""
     svc = _build_materia_service(db, current_user.tenant_id)
     materias = await svc.listar()
     return [_materia_to_response(m) for m in materias]
@@ -224,14 +224,13 @@ async def listar_materias(
 
 @router.get(
     "/materias/{materia_id}",
-    dependencies=[Depends(require_permission("estructura:gestionar"))],
 )
 async def obtener_materia(
     materia_id: UUID,
     current_user: UserContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> MateriaResponse:
-    """Obtiene una materia por ID."""
+    """Obtiene una materia por ID (solo autenticación)."""
     svc = _build_materia_service(db, current_user.tenant_id)
     materia = await svc.obtener(materia_id)
     if materia is None:
@@ -298,13 +297,12 @@ async def crear_cohorte(
 
 @router.get(
     "/cohortes",
-    dependencies=[Depends(require_permission("estructura:gestionar"))],
 )
 async def listar_cohortes(
     current_user: UserContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[CohorteResponse]:
-    """Lista todas las cohortes del tenant."""
+    """Lista todas las cohortes del tenant (solo autenticación)."""
     svc = _build_cohorte_service(db, current_user.tenant_id)
     cohortes = await svc.listar()
     return [_cohorte_to_response(c) for c in cohortes]
@@ -312,14 +310,13 @@ async def listar_cohortes(
 
 @router.get(
     "/cohortes/{cohorte_id}",
-    dependencies=[Depends(require_permission("estructura:gestionar"))],
 )
 async def obtener_cohorte(
     cohorte_id: UUID,
     current_user: UserContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> CohorteResponse:
-    """Obtiene una cohorte por ID."""
+    """Obtiene una cohorte por ID (solo autenticación)."""
     svc = _build_cohorte_service(db, current_user.tenant_id)
     cohorte = await svc.obtener(cohorte_id)
     if cohorte is None:

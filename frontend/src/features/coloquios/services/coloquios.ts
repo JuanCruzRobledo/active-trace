@@ -2,6 +2,7 @@ import { api } from "@/shared/services/api";
 import type {
   Evaluacion,
   EvaluacionCreate,
+  EvaluacionUpdate,
   ImportarAlumnosRequest,
   MetricasColoquios,
   AgendaItem,
@@ -38,6 +39,24 @@ export async function crearConvocatoria(
   return data;
 }
 
+export async function fetchConvocatoriaById(
+  id: string,
+): Promise<Evaluacion> {
+  const { data } = await api.get<Evaluacion>(`/coloquios/convocatorias/${id}`);
+  return data;
+}
+
+export async function actualizarConvocatoria(
+  id: string,
+  payload: EvaluacionUpdate,
+): Promise<Evaluacion> {
+  const { data } = await api.patch<Evaluacion>(
+    `/coloquios/convocatorias/${id}`,
+    payload,
+  );
+  return data;
+}
+
 export async function cerrarConvocatoria(
   evaluacionId: string,
 ): Promise<void> {
@@ -59,8 +78,9 @@ export async function fetchAgenda(
 ): Promise<AgendaItem[]> {
   const params: Record<string, string> = {};
   if (evaluacionId) params.evaluacion_id = evaluacionId;
-  const { data } = await api.get<AgendaItem[]>("/coloquios/agenda", {
-    params,
-  });
-  return data;
+  const { data } = await api.get<{ items: AgendaItem[]; total: number }>(
+    "/coloquios/agenda",
+    { params },
+  );
+  return data.items;
 }
